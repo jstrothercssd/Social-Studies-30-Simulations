@@ -1,0 +1,2426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Barons' War</title>
+<meta name="description" content="An educational strategy game about the road to Magna Carta, 1215." />
+<style>
+:root{
+  --ink:#1b140f;
+  --ink-soft:#2a2019;
+  --ink-softer:#352820;
+  --parchment:#cdbd93;
+  --parchment-dark:#a89468;
+  --parchment-light:#e4d8b4;
+  --seal:#7c1f2b;
+  --seal-bright:#a4303f;
+  --gold:#b8892b;
+  --gold-bright:#d9ad4d;
+  --forest:#3f4f37;
+  --forest-bright:#5c7350;
+  --steel:#4b5560;
+  --steel-bright:#6c7a87;
+  --text-on-ink:#e8dcbd;
+  --text-on-parchment:#241a12;
+  --text-dim:#a99b7c;
+  --font-display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --font-body:Georgia,"Iowan Old Style",serif;
+  --font-data:"Courier New",ui-monospace,SFMono-Regular,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(ellipse at 50% -10%, #2d2118 0%, var(--ink) 55%, #100c08 100%);
+  color:var(--text-on-ink);
+  font-family:var(--font-body);
+  min-height:100vh;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px 12px 40px;
+}
+::selection{background:var(--gold); color:var(--ink);}
+button{font-family:var(--font-display);}
+.frame{
+  width:100%;
+  max-width:1040px;
+  border:1px solid var(--gold);
+  border-radius:6px;
+  background:
+    linear-gradient(180deg, rgba(184,137,43,0.06), transparent 12%),
+    var(--ink-soft);
+  box-shadow:0 0 0 6px var(--ink), 0 0 40px rgba(0,0,0,0.6), inset 0 0 60px rgba(184,137,43,0.06);
+  overflow:hidden;
+  position:relative;
+}
+.frame::before{
+  content:"";
+  position:absolute; inset:6px;
+  border:1px solid rgba(184,137,43,0.35);
+  border-radius:3px;
+  pointer-events:none;
+}
+.titlebar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 22px 10px;
+  border-bottom:1px solid rgba(184,137,43,0.35);
+}
+.titlebar h1{
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:1.5rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--text-on-ink);
+}
+.titlebar h1 .drop{
+  color:var(--gold-bright);
+  font-size:1.6em;
+  line-height:0.6;
+  vertical-align:-0.18em;
+  padding-right:0.03em;
+}
+.titlebar .sub{
+  font-family:var(--font-data);
+  font-size:0.72rem;
+  letter-spacing:0.08em;
+  color:var(--text-dim);
+  text-transform:uppercase;
+}
+#soundToggle{
+  background:none;border:1px solid var(--gold);color:var(--gold-bright);
+  border-radius:4px;padding:6px 10px;cursor:pointer;font-size:0.85rem;
+  letter-spacing:0.05em;
+}
+#soundToggle:hover{background:rgba(184,137,43,0.15);}
+#stage{padding:18px 22px 24px;}
+h2.section{
+  font-family:var(--font-display);
+  font-size:1.15rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--gold-bright);
+  margin:0 0 12px;
+  text-wrap:balance;
+}
+h2.section .drop{
+  color:var(--seal-bright);
+  font-size:1.7em;
+  line-height:0.55;
+  vertical-align:-0.24em;
+  padding-right:0.04em;
+}
+p{line-height:1.55; color:var(--text-on-ink);}
+.game-layout{
+  display:grid;
+  grid-template-columns:210px 1fr;
+  gap:16px;
+}
+@media (max-width:720px){
+  .game-layout{grid-template-columns:1fr;}
+}
+.ledger{
+  background:linear-gradient(180deg, var(--parchment-light), var(--parchment));
+  color:var(--text-on-parchment);
+  border-radius:5px;
+  padding:12px 12px 14px;
+  border:1px solid var(--parchment-dark);
+  box-shadow:inset 0 0 18px rgba(36,26,18,0.18);
+  align-self:start;
+  overflow-x:auto;
+}
+.ledger h3{
+  margin:0 0 8px;
+  font-family:var(--font-display);
+  font-size:0.78rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--parchment-dark);
+  padding-bottom:6px;
+}
+.ledger .row{
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--font-data); font-size:0.78rem;
+  padding:3px 0;
+  gap:6px;
+  white-space:nowrap;
+}
+.ledger .row .k{color:#4a3a24; letter-spacing:0.02em;}
+.ledger .row .v{font-variant-numeric:tabular-nums; font-weight:700;}
+.meter{
+  height:5px;border-radius:3px;background:rgba(36,26,18,0.18);
+  margin:2px 0 6px; overflow:hidden;
+}
+.meter > i{display:block; height:100%; background:var(--forest);}
+.meter.seal > i{background:var(--seal);}
+.meter.gold > i{background:var(--gold);}
+.divider-parch{height:1px; background:var(--parchment-dark); margin:8px 0;}
+.right-pane{display:flex; flex-direction:column; gap:14px; min-width:0;}
+.viewport{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:5px;
+  overflow:hidden;
+  border:1px solid var(--gold);
+  box-shadow:0 0 22px rgba(0,0,0,0.5) inset;
+}
+.viewport canvas{width:100%; height:100%; display:block;}
+.panel{
+  background:linear-gradient(180deg, var(--parchment-light), var(--parchment));
+  color:var(--text-on-parchment);
+  border-radius:5px;
+  border:1px solid var(--parchment-dark);
+  padding:14px 16px;
+}
+.panel p{color:var(--text-on-parchment); margin:0 0 10px;}
+.btnrow{display:flex; flex-wrap:wrap; gap:8px;}
+.btn{
+  background:linear-gradient(180deg, var(--forest-bright), var(--forest));
+  color:#eee4c8;
+  border:1px solid #263120;
+  border-radius:4px;
+  padding:9px 14px;
+  font-size:0.85rem;
+  letter-spacing:0.03em;
+  cursor:pointer;
+  box-shadow:0 2px 0 rgba(0,0,0,0.25);
+}
+.btn:hover{filter:brightness(1.12);}
+.btn:active{transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.25);}
+.btn:disabled{opacity:0.4; cursor:not-allowed; filter:none;}
+.btn.seal{background:linear-gradient(180deg, var(--seal-bright), var(--seal)); border-color:#3d0f16;}
+.btn.gold{background:linear-gradient(180deg, var(--gold-bright), var(--gold)); border-color:#5c410f; color:#241a0a;}
+.btn.steel{background:linear-gradient(180deg, var(--steel-bright), var(--steel)); border-color:#252b30;}
+.btn.small{padding:6px 10px; font-size:0.76rem;}
+.helptext{font-family:var(--font-data); font-size:0.72rem; color:#5a4a30; margin-top:4px;}
+.center-screen{
+  min-height:60vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+  gap:18px;
+  padding:20px 10px;
+}
+.game-title{
+  font-family:var(--font-display); font-weight:700;
+  font-size:clamp(2.1rem,6vw,3.4rem);
+  letter-spacing:0.06em;
+  color:var(--gold-bright);
+  text-shadow:0 0 30px rgba(184,137,43,0.35);
+  text-wrap:balance;
+  margin:0;
+}
+.game-title .drop{color:var(--seal-bright); font-size:1.15em;}
+.tagline{font-family:var(--font-data); font-size:0.85rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim);}
+.creation-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; text-align:left;}
+@media (max-width:640px){.creation-grid{grid-template-columns:1fr;}}
+.field{margin-bottom:14px;}
+.field label{display:block; font-family:var(--font-data); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); margin-bottom:6px;}
+.swatchrow{display:flex; gap:8px; flex-wrap:wrap;}
+.swatch{
+  width:30px; height:30px; border-radius:50%; cursor:pointer;
+  border:2px solid rgba(232,220,189,0.25);
+}
+.swatch.sel{border-color:var(--gold-bright); box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--gold-bright);}
+.seg{display:flex; gap:6px;}
+.seg button{
+  flex:1; background:var(--ink-softer); color:var(--text-on-ink); border:1px solid var(--steel);
+  padding:8px; border-radius:4px; cursor:pointer; font-size:0.85rem;
+}
+.seg button.sel{background:var(--gold); color:var(--ink); border-color:var(--gold-bright); font-weight:700;}
+input[type=text]{
+  width:100%; padding:9px 10px; border-radius:4px; border:1px solid var(--steel);
+  background:var(--ink-softer); color:var(--text-on-ink); font-family:var(--font-body); font-size:0.95rem;
+}
+.npc-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+.npc-card{
+  background:rgba(36,26,18,0.06); border:1px solid var(--parchment-dark); border-radius:5px;
+  padding:10px; text-align:center; cursor:pointer;
+}
+.npc-card:hover{background:rgba(124,31,43,0.08); border-color:var(--seal);}
+.npc-card canvas{display:block; margin:0 auto 6px;}
+.npc-name{font-family:var(--font-display); font-weight:700; font-size:0.88rem;}
+.npc-pastime{font-family:var(--font-data); font-size:0.66rem; color:#5a4a30; text-transform:uppercase; letter-spacing:0.05em;}
+.dialogue-box{
+  background:rgba(36,26,18,0.06); border:1px solid var(--parchment-dark); border-radius:5px; padding:12px; margin-top:10px;
+}
+.choice-btn{
+  display:block; width:100%; text-align:left; background:var(--parchment-light); color:var(--text-on-parchment);
+  border:1px solid var(--parchment-dark); border-radius:4px; padding:8px 10px; margin-bottom:6px; cursor:pointer; font-family:var(--font-body); font-size:0.88rem;
+}
+.choice-btn:hover{background:#fff2cf;}
+.choice-btn:disabled{opacity:0.5; cursor:not-allowed; background:var(--parchment-dark); font-style:italic;}
+.choice-btn:disabled:hover{background:var(--parchment-dark);}
+.toast{
+  position:fixed; top:16px; left:50%; transform:translateX(-50%);
+  background:var(--parchment-light); color:var(--text-on-parchment);
+  border:1px solid var(--gold); border-radius:6px; padding:14px 20px; max-width:420px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.5); z-index:50; font-size:0.92rem;
+}
+.toast h4{margin:0 0 6px; font-family:var(--font-display); color:var(--seal); letter-spacing:0.05em; text-transform:uppercase; font-size:0.85rem;}
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px;
+}
+.modal{
+  background:linear-gradient(180deg, var(--parchment-light), var(--parchment));
+  color:var(--text-on-parchment); border-radius:6px; border:1px solid var(--gold);
+  padding:20px 22px; max-width:460px; width:100%; box-shadow:0 10px 50px rgba(0,0,0,0.6);
+}
+.modal h3{margin-top:0; font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.06em; color:var(--seal);}
+.modal p{color:var(--text-on-parchment);}
+.footer-note{font-family:var(--font-data); font-size:0.68rem; color:var(--text-dim); text-align:center; margin-top:6px;}
+.hp-dots{display:flex; gap:4px;}
+.hp-dots i{width:11px; height:11px; border-radius:50%; background:var(--seal); display:inline-block;}
+.hp-dots i.lost{background:#3a2c22; box-shadow:inset 0 0 0 1px #000;}
+.keyflash{filter:brightness(1.5) !important; transform:translateY(1px);}
+kbd{font-family:var(--font-data); background:rgba(36,26,18,0.15); border:1px solid rgba(36,26,18,0.4); border-radius:3px; padding:0 5px; font-size:0.78em;}
+a{color:var(--gold-bright);}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="titlebar">
+    <h1><span class="drop">T</span>he Barons' <span class="drop">W</span>ar</h1>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="sub" id="seasonLabel"></span>
+      <button id="soundToggle" title="Toggle music">&#9835; Music: On</button>
+    </div>
+  </div>
+  <div id="stage"></div>
+</div>
+<script>
+(function(){
+"use strict";
+
+/* ============================= UTILITIES ============================= */
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function shade(hex,pct){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  r=clamp(Math.round(r+(pct<0?r:255-r)*pct),0,255);
+  g=clamp(Math.round(g+(pct<0?g:255-g)*pct),0,255);
+  b=clamp(Math.round(b+(pct<0?b:255-b)*pct),0,255);
+  return "#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
+function rand(min,max){return Math.random()*(max-min)+min;}
+function randi(min,max){return Math.floor(rand(min,max+1));}
+function choice(arr){return arr[randi(0,arr.length-1)];}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function fmt(n){return Math.round(n).toLocaleString();}
+const $ = sel => document.querySelector(sel);
+const stage = $("#stage");
+let activeAnimId = null;
+function stopActiveAnim(){ if(activeAnimId){ cancelAnimationFrame(activeAnimId); activeAnimId=null; } }
+
+/* ============================= AUDIO ENGINE ============================= */
+const Audio1 = (function(){
+  let ctx=null, master=null, running=false, mode="ambient", timer=null, nextNoteTime=0, beat=0, muted=false;
+  const scaleAmbient=[220,246.94,261.63,293.66,329.63,349.23,392.00]; // A dorian-ish
+  const scaleBattle=[220,246.94,261.63,293.66,329.63,349.23,392.00,440]; // A phrygian-ish, wider range for melody
+  // a driving little riff (scale-degree offsets, can exceed the scale length to jump up an octave)
+  const battleMotif=[0,2,3,2,4,3,2,0, 5,4,3,2,4,5,7,4, 0,2,3,5,4,3,1,0];
+  const scaleVictory=[261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25]; // C major, bright and open
+  const victoryMotif=[0,4,7,4, 2,4,7,9, 7,9,12,9, 4,7,4,0];
+  function degreeToFreq(scale,deg){
+    const len=scale.length;
+    const oct=Math.floor(deg/len);
+    const idx=((deg%len)+len)%len;
+    return scale[idx]*Math.pow(2,oct);
+  }
+  function ensure(){
+    if(!ctx){
+      ctx = new (window.AudioContext||window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.22; master.connect(ctx.destination);
+    }
+    if(ctx.state==="suspended") ctx.resume();
+  }
+  function pluck(freq,t,dur,gain,type){
+    // A plucked-string (lute/harp) voice: a brief filtered noise "pluck" transient for
+    // string attack character, feeding a triangle tone whose lowpass filter sweeps from
+    // bright to mellow as it decays — much warmer than a bare oscillator beep.
+    const o=ctx.createOscillator(); const g=ctx.createGain();
+    const f=ctx.createBiquadFilter(); f.type="lowpass"; f.Q.value=0.9;
+    f.frequency.setValueAtTime(freq*7, t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(freq*1.6,180), t+dur*0.85);
+    o.type=type||"triangle"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(gain,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o.stop(t+dur+0.05);
+    const nSize=Math.max(1,Math.floor(ctx.sampleRate*0.012));
+    const nbuf=ctx.createBuffer(1,nSize,ctx.sampleRate);
+    const nd=nbuf.getChannelData(0);
+    for(let i=0;i<nSize;i++) nd[i]=(Math.random()*2-1)*(1-i/nSize);
+    const ns=ctx.createBufferSource(); ns.buffer=nbuf;
+    const nf=ctx.createBiquadFilter(); nf.type="bandpass"; nf.frequency.value=clamp(freq*2,300,4000); nf.Q.value=1.8;
+    const ng=ctx.createGain(); ng.gain.setValueAtTime(gain*0.3,t); ng.gain.exponentialRampToValueAtTime(0.0001,t+0.025);
+    ns.connect(nf); nf.connect(ng); ng.connect(master);
+    ns.start(t);
+  }
+  function drone(freq,t,dur,gain){
+    const o=ctx.createOscillator(); const g=ctx.createGain();
+    o.type="sine"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(gain,t+0.3);
+    g.gain.linearRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t+dur+0.1);
+  }
+  function noiseHit(t,gain){
+    const bufSize=ctx.sampleRate*0.12;
+    const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++) d[i]=(Math.random()*2-1)*(1-i/bufSize);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1600;
+    const g=ctx.createGain(); g.gain.setValueAtTime(gain,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start(t);
+  }
+  function schedule(){
+    const lookahead=0.2;
+    while(nextNoteTime < ctx.currentTime+lookahead){
+      if(mode==="battle"){
+        const interval=0.27;
+        const deg=battleMotif[beat % battleMotif.length];
+        const freq=degreeToFreq(scaleBattle,deg);
+        pluck(freq, nextNoteTime, 0.26, 0.16, "triangle");
+        // a harmony voice a third below, on the strong beats — a second lute string, for a fuller, more melodic battle theme
+        if(beat%2===0) pluck(degreeToFreq(scaleBattle,deg-2), nextNoteTime+0.015, 0.24, 0.09, "triangle");
+        if(beat%8===0) drone(scaleBattle[0]/2, nextNoteTime, interval*8, 0.07);
+        noiseHit(nextNoteTime, beat%4===0?0.2:0.11);
+        nextNoteTime += interval;
+      } else if(mode==="victory"){
+        const interval=0.34;
+        const deg=victoryMotif[beat % victoryMotif.length];
+        pluck(degreeToFreq(scaleVictory,deg), nextNoteTime, 0.4, 0.17, "triangle");
+        // a bright chord swell on the strong beat, for a fanfare feel
+        if(beat%4===0){
+          pluck(degreeToFreq(scaleVictory,deg+4), nextNoteTime+0.02, 0.55, 0.1, "triangle");
+          pluck(degreeToFreq(scaleVictory,deg+7), nextNoteTime+0.04, 0.55, 0.08, "triangle");
+          drone(scaleVictory[0]/2, nextNoteTime, interval*4, 0.06);
+        }
+        nextNoteTime += interval;
+      } else {
+        const interval=1.05;
+        pluck(choice(scaleAmbient), nextNoteTime, 0.9, 0.09, "triangle");
+        if(beat%4===0) drone(scaleAmbient[0]/2, nextNoteTime, interval*4, 0.035);
+        nextNoteTime += interval;
+      }
+      beat++;
+    }
+  }
+  function loop(){ if(!running) return; schedule(); timer=setTimeout(loop,100); }
+  function start(){
+    ensure();
+    if(muted) return;
+    if(!running){ running=true; nextNoteTime=ctx.currentTime+0.1; beat=0; loop(); }
+  }
+  function stop(){ running=false; if(timer) clearTimeout(timer); }
+  function setMode(m){ mode=m; }
+  function setMuted(v){
+    muted=v;
+    if(muted){ stop(); } else { start(); }
+  }
+  return {start,stop,setMode,setMuted, isMuted:()=>muted, resumeCtx:ensure};
+})();
+
+/* ============================= DATA ============================= */
+const SEASONS = ["Spring","Summer","Autumn","Winter"];
+const PASTIMES = {
+  falconry:"Falconry", chess:"Chess", archery:"Archery",
+  music:"Music", poetry:"Poetry", hunting:"Hunting"
+};
+const NOBLES = [
+  {id:"aldric", name:"Count Aldric de Vere", sex:"male", pastime:"falconry", beard:true,
+   skin:"#d9a86c", outfit:"#3a5a8c", hair:"#3a2a18",
+   flavor:"He keeps a peregrine on his wrist even indoors, and speaks of it as other men speak of their sons."},
+  {id:"osric", name:"Count Osric FitzHenry", sex:"male", pastime:"chess",
+   skin:"#c98f5c", outfit:"#5c3a8c", hair:"#111111",
+   flavor:"A carved ivory chess set never leaves his solar. He is, by reputation, unbeaten in a decade."},
+  {id:"bertrand", name:"Count Bertrand of Lacy", sex:"male", pastime:"archery", beard:true,
+   skin:"#e8c39a", outfit:"#7a3a2a", hair:"#8a5a2a",
+   flavor:"His yard is lined with targets. He claims a longbow tells more truth about a man than his tongue does."},
+  {id:"isolde", name:"Countess Isolde de Clare", sex:"female", pastime:"music",
+   skin:"#e8c39a", outfit:"#8c2a4a", hair:"#2a1a10",
+   flavor:"She composes her own verses for the lute, and is said to have made a bishop weep with one."},
+  {id:"marguerite", name:"Countess Marguerite of York", sex:"female", pastime:"poetry",
+   skin:"#f0d3ab", outfit:"#2a6a5a", hair:"#c9a227",
+   flavor:"Her letters circulate among the great houses of England, prized for their wit and their venom alike."},
+  {id:"rowena", name:"Countess Rowena de Vesci", sex:"female", pastime:"hunting",
+   skin:"#c98f5c", outfit:"#4a5a2a", hair:"#5a2a10",
+   flavor:"She rides to hounds before dawn most days and has broken more horses than most knights have lances."}
+];
+const DIALOGUE_TOPICS = [
+  {key:"falconry", label:"Speak of falconry and the hunt for game-birds", pastime:"falconry"},
+  {key:"chess", label:"Challenge them to discuss a game of chess", pastime:"chess"},
+  {key:"archery", label:"Remark on the art of the longbow", pastime:"archery"},
+  {key:"music", label:"Ask them to speak of music and the lute", pastime:"music"},
+  {key:"poetry", label:"Trade a few lines of courtly poetry", pastime:"poetry"},
+  {key:"hunting", label:"Discuss the thrill of the hunt", pastime:"hunting"},
+  {key:"weather", label:"Make idle talk of the weather and harvest", pastime:null},
+  {key:"flatter", label:"Offer a bold, flattering compliment", pastime:"bold"},
+  {key:"dismiss", label:"Cut the conversation short, impatiently", pastime:"rude"}
+];
+const RANDOM_EVENTS = [
+  {name:"Good Harvest", weight:3, text:"The fields yielded better than expected this season. The steward is delighted.",
+   fx:s=>{const g=randi(20,50); s.gold+=g; s.cropStatus=clamp(s.cropStatus+10,0,100); s.morale=clamp(s.morale+3,0,100);}},
+  {name:"Blight", weight:2, text:"A blight crept through the barley. The village will feel it.",
+   fx:s=>{s.cropStatus=clamp(s.cropStatus-15,0,100); s.gold=Math.max(0,s.gold-randi(5,20));}},
+  {name:"Sickness in the Village", weight:2, text:"Fever passed through the cottages. Some serfs did not recover.",
+   fx:s=>{s.serfs=Math.max(0,s.serfs-randi(2,8)); s.morale=clamp(s.morale-8,0,100);}},
+  {name:"A Wandering Minstrel", weight:2, text:"A minstrel sang in the village square for a night. Spirits lifted considerably.",
+   fx:s=>{s.morale=clamp(s.morale+10,0,100);}},
+  {name:"The King Raises Your Taxes", weight:4, kingTrouble:true, text:"Royal collectors arrive unannounced, demanding a swollen levy — set, as ever, without your counsel or consent. Grumbling follows.",
+   fx:s=>{const cost=randi(25,55); s.gold=Math.max(0,s.gold-cost); s.kingRelation=clamp(s.kingRelation-randi(8,15),0,100); s.morale=clamp(s.morale-4,0,100);}},
+  {name:"A Knight Sentenced to Death", weight:2, kingTrouble:true, text:"Word reaches the keep: one of your knights has been condemned and executed on the King's word alone, with no trial by his peers. The household is shaken.",
+   fx:s=>{ if(s.knights>0){ s.knights=Math.max(0,s.knights-1); s.kingRelation=clamp(s.kingRelation-18,0,100); s.morale=clamp(s.morale-8,0,100); }
+     else { s.kingRelation=clamp(s.kingRelation-10,0,100); } }},
+  {name:"The King Rules Against You", weight:2, kingTrouble:true, text:"A land dispute is brought before the King's court — and decided against you, on no evidence but royal whim. There is no appeal.",
+   fx:s=>{s.kingRelation=clamp(s.kingRelation-12,0,100); s.gold=Math.max(0,s.gold-randi(10,25));}},
+  {name:"Bandit Raid", weight:1, text:"Brigands struck an outlying farm before your knights could respond.",
+   fx:s=>{s.gold=Math.max(0,s.gold-randi(10,25)); s.serfs=Math.max(0,s.serfs-randi(1,4));}},
+  {name:"A Prosperous Trade Fair", weight:2, text:"Merchants crowd the market square for a trade fair, and your coffers benefit handsomely.",
+   fx:s=>{s.gold+=randi(25,55);}},
+  {name:"Market Prices Rise", weight:2, text:"Wool fetched an excellent price at market this season.",
+   fx:s=>{s.gold+=randi(15,35);}},
+  {name:"A Rival's Insult", weight:1, text:"Word reaches you that another baron mocked your household at court.",
+   fx:s=>{s.baronRelation=clamp(s.baronRelation-6,0,100);}},
+  {name:"Pilgrims Pass Through", weight:2, text:"Pilgrims lodged in your hall and spoke well of your hospitality afterward.",
+   fx:s=>{s.baronRelation=clamp(s.baronRelation+7,0,100);}},
+  {name:"The King Grants His Favor", weight:1, text:"A royal messenger arrives with an unexpected token of goodwill — a rare gesture from King John.",
+   fx:s=>{s.kingRelation=clamp(s.kingRelation+10,0,100); s.gold+=randi(10,20);}},
+  {name:"A Quiet Season", weight:3, text:"Little of note occurred. The keep settled into its routines.", fx:s=>{}}
+];
+
+/* ============================= STATE ============================= */
+let S = null;
+function newGame(){
+  S = {
+    player:{name:"", sex:"male", skin:"#d9a86c", outfit:"#7c1f2b", hair:"#3a2a18"},
+    seasonIndex:0, year:1214,
+    combat:50, knights:5, gold:220, serfs:120, morale:60,
+    productivity:45, productivityCap:70,
+    cropStatus:55,
+    loverId:null, married:false, spouseId:null, children:[],
+    relations:Object.fromEntries(NOBLES.map(n=>[n.id, randi(10,30)])),
+    baronRelation:35, kingRelation:60, kingArmy:100,
+    warUnlocked:false, warWon:false, gameEnded:false,
+    seasonsPlayed:0, seasonsSinceKingTrouble:0,
+    romanceCap:2, romanceUsed:0, romancePairsUsed:[],
+    feastBaronsUsed:false
+  };
+}
+function save(){ try{ localStorage.setItem("baronswar_save", JSON.stringify(S)); }catch(e){} }
+function loadSave(){ try{ const raw=localStorage.getItem("baronswar_save"); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function clearSave(){ try{ localStorage.removeItem("baronswar_save"); }catch(e){} }
+
+function seasonName(){ return SEASONS[S.seasonIndex%4]+" "+S.year; }
+function updateSeasonLabel(){
+  $("#seasonLabel").textContent = S ? seasonName() : "";
+}
+
+/* ============================= SPRITE DRAWING ============================= */
+function drawFigure(ctx, opt){
+  const {x,y,scale=1,sex="male",skin="#d9a86c",outfit="#7c1f2b",hair="#3a2a18",
+         pose="idle",facing=1,noble=false,weapon=null,hit=false,beard=false,mood="neutral",crown=false,armored=false} = opt;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(scale*facing, scale);
+  let armAngle = 0, lean=0;
+  if(pose==="windup"){ armAngle=-0.9; lean=-0.05; }
+  else if(pose==="swing"){ armAngle=1.1; lean=0.08; }
+  else if(pose==="block"){ armAngle=-0.3; }
+  else if(pose==="stagger"){ lean=0.15; }
+  ctx.rotate(lean*0.2);
+  // shadow
+  ctx.fillStyle="rgba(0,0,0,0.35)";
+  ctx.beginPath(); ctx.ellipse(0,72,26,7,0,0,Math.PI*2); ctx.fill();
+  // cape (nobility only, and never over armour — no one fights in their finery) — drawn behind the body
+  if(noble && !armored){
+    const capeGrad = ctx.createLinearGradient(-30,0,22,0);
+    capeGrad.addColorStop(0, shade(outfit,-0.55));
+    capeGrad.addColorStop(0.55, shade(outfit,-0.3));
+    capeGrad.addColorStop(1, shade(outfit,-0.5));
+    ctx.fillStyle=capeGrad;
+    ctx.beginPath();
+    ctx.moveTo(-15,-8); ctx.lineTo(15,-8);
+    ctx.quadraticCurveTo(30,20,22,58);
+    ctx.lineTo(-22,58);
+    ctx.quadraticCurveTo(-30,20,-15,-8);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=shade(outfit,-0.6); ctx.lineWidth=1.5; ctx.stroke();
+  }
+  // legs — a light-to-dark gradient across each leg gives them a rounded, cylindrical look
+  if(armored){
+    // chainmail chausses: a steel gradient with a scattering of tiny ring-dots for texture
+    [-14,4].forEach(lx=>{
+      const g=ctx.createLinearGradient(lx,0,lx+10,0);
+      g.addColorStop(0,"#2e343a"); g.addColorStop(0.5,"#7a838c"); g.addColorStop(1,"#3a4048");
+      ctx.fillStyle=g; ctx.fillRect(lx,34,10,34);
+      ctx.save(); ctx.beginPath(); ctx.rect(lx,34,10,34); ctx.clip();
+      ctx.fillStyle="rgba(18,22,26,0.4)";
+      for(let ry=34;ry<68;ry+=4){
+        const off=(Math.round((ry-34)/4)%2)*2;
+        for(let rx=lx-1;rx<lx+11;rx+=4){ ctx.beginPath(); ctx.arc(rx+off,ry,0.9,0,Math.PI*2); ctx.fill(); }
+      }
+      ctx.restore();
+    });
+  } else {
+    const legGradL=ctx.createLinearGradient(-14,0,-4,0);
+    legGradL.addColorStop(0,"#1c130c"); legGradL.addColorStop(0.5,"#3a2a1c"); legGradL.addColorStop(1,"#170f09");
+    ctx.fillStyle=legGradL; ctx.fillRect(-14,34,10,34);
+    const legGradR=ctx.createLinearGradient(4,0,14,0);
+    legGradR.addColorStop(0,"#170f09"); legGradR.addColorStop(0.5,"#3a2a1c"); legGradR.addColorStop(1,"#1c130c");
+    ctx.fillStyle=legGradR; ctx.fillRect(4,34,10,34);
+  }
+  // body — a diagonal gradient suggests a rounded torso catching the light from the upper-left
+  if(armored){
+    // a chainmail hauberk first...
+    const mailGrad=ctx.createLinearGradient(-16,-6,20,40);
+    mailGrad.addColorStop(0,"#8a939c"); mailGrad.addColorStop(0.5,"#5a636c"); mailGrad.addColorStop(1,"#3a4048");
+    ctx.fillStyle = hit ? "#c0392b" : mailGrad;
+    ctx.beginPath();
+    if(sex==="female"){ ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.lineTo(24,46); ctx.lineTo(-24,46); }
+    else { ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.lineTo(19,38); ctx.lineTo(-19,38); }
+    ctx.closePath(); ctx.fill();
+    if(!hit){
+      ctx.save(); ctx.clip();
+      ctx.fillStyle="rgba(18,22,26,0.35)";
+      for(let ry=-4;ry<46;ry+=4.5){
+        const off=(Math.round((ry+4)/4.5)%2)*2.2;
+        for(let rx=-18;rx<22;rx+=4.5){ ctx.beginPath(); ctx.arc(rx+off,ry,0.9,0,Math.PI*2); ctx.fill(); }
+      }
+      ctx.restore();
+      // ...then a sleeveless surcoat over it, in their own chosen colours — no armour is worn plain
+      ctx.fillStyle=outfit;
+      ctx.beginPath();
+      if(sex==="female"){ ctx.moveTo(-11,-4); ctx.lineTo(11,-4); ctx.lineTo(16,40); ctx.lineTo(-16,40); }
+      else { ctx.moveTo(-11,-4); ctx.lineTo(11,-4); ctx.lineTo(13,32); ctx.lineTo(-13,32); }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=shade(outfit,-0.4); ctx.lineWidth=1; ctx.stroke();
+    }
+  } else {
+    let bodyFill;
+    if(hit){ bodyFill="#c0392b"; }
+    else {
+      const bg=ctx.createLinearGradient(-16,-6,22,20);
+      bg.addColorStop(0, shade(outfit,0.22));
+      bg.addColorStop(0.45, outfit);
+      bg.addColorStop(1, shade(outfit,-0.3));
+      bodyFill=bg;
+    }
+    ctx.fillStyle=bodyFill;
+    if(sex==="female"){
+      ctx.beginPath();
+      ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.lineTo(24,46); ctx.lineTo(-24,46); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-16,-6); ctx.lineTo(16,-6); ctx.lineTo(19,38); ctx.lineTo(-19,38); ctx.closePath(); ctx.fill();
+    }
+  }
+  // fur-trimmed collar (nobility only, never over armour)
+  if(noble && !hit && !armored){
+    ctx.fillStyle="#f0e8d8";
+    for(let i=-14;i<=14;i+=7){
+      ctx.beginPath(); ctx.arc(i,-6,4.2,0,Math.PI*2); ctx.fill();
+    }
+  }
+  // belt
+  ctx.fillStyle="#241a12"; ctx.fillRect(-16,26,32,5);
+  if(noble){ ctx.fillStyle="#d9ad4d"; ctx.fillRect(-3,26.5,6,4); }
+  // far arm (behind body) — a lighter highlight stroke along one edge gives it a rounded, cylindrical form.
+  // armoured limbs wear mail sleeves and gauntlets rather than bare skin.
+  const limbColor = armored ? "#6b747c" : skin;
+  const limbHighlight = armored ? "#9aa4ac" : shade(skin,0.28);
+  ctx.strokeStyle=limbColor; ctx.lineWidth=8; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(24,20); ctx.stroke();
+  ctx.strokeStyle=limbHighlight; ctx.lineWidth=2.6;
+  ctx.beginPath(); ctx.moveTo(13,-1); ctx.lineTo(22.5,18); ctx.stroke();
+  // near arm (weapon arm)
+  ctx.save();
+  ctx.translate(-14,-2);
+  ctx.rotate(armAngle);
+  ctx.strokeStyle=limbColor; ctx.lineWidth=8; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,26); ctx.stroke();
+  ctx.strokeStyle=limbHighlight; ctx.lineWidth=2.6;
+  ctx.beginPath(); ctx.moveTo(-1.6,1); ctx.lineTo(-1.6,25); ctx.stroke();
+  if(weapon==="mace"){
+    ctx.strokeStyle="#4a4a4a"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,26); ctx.lineTo(0,50); ctx.stroke();
+    ctx.strokeStyle="#7a7a7a"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(-1,27); ctx.lineTo(-1,48); ctx.stroke();
+    const maceGrad=ctx.createRadialGradient(-2,50,1,0,52,8);
+    maceGrad.addColorStop(0,"#8a8a8a"); maceGrad.addColorStop(0.6,"#4a4a4a"); maceGrad.addColorStop(1,"#222");
+    ctx.fillStyle=maceGrad; ctx.beginPath(); ctx.arc(0,52,7,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#222";
+    for(let a=0;a<8;a++){ const ang=a/8*Math.PI*2; ctx.beginPath(); ctx.arc(Math.cos(ang)*7,52+Math.sin(ang)*7,1.4,0,Math.PI*2); ctx.fill(); }
+  } else if(weapon==="sword"){
+    // pommel and grip
+    ctx.fillStyle="#3a2818"; ctx.fillRect(-1.6,20,3.2,7);
+    ctx.fillStyle="#c9a227"; ctx.beginPath(); ctx.arc(0,20,2.3,0,Math.PI*2); ctx.fill();
+    // crossguard
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=3.2; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-7.5,27); ctx.lineTo(7.5,27); ctx.stroke();
+    // blade: a tapered, pointed shape with a bright fuller line for a proper metallic edge
+    const bladeGrad=ctx.createLinearGradient(-2.6,0,2.6,0);
+    bladeGrad.addColorStop(0,"#8b939a"); bladeGrad.addColorStop(0.45,"#eef2f5"); bladeGrad.addColorStop(0.55,"#eef2f5"); bladeGrad.addColorStop(1,"#7d858c");
+    ctx.fillStyle=bladeGrad;
+    ctx.beginPath();
+    ctx.moveTo(-2.6,27); ctx.lineTo(2.6,27); ctx.lineTo(1.6,51); ctx.lineTo(0,58); ctx.lineTo(-1.6,51); ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle="#6b7278"; ctx.lineWidth=0.7; ctx.stroke();
+  } else if(weapon==="shield"){
+    const shieldGrad=ctx.createRadialGradient(-3,26,1,0,30,15);
+    shieldGrad.addColorStop(0, shade(outfit,0.3)); shieldGrad.addColorStop(1, shade(outfit,-0.25));
+    ctx.fillStyle=shieldGrad;
+    ctx.beginPath(); ctx.ellipse(0,30,10,14,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2; ctx.stroke();
+  } else if(weapon==="club"){
+    ctx.strokeStyle="#4a3320"; ctx.lineWidth=6; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(0,26); ctx.lineTo(4,50); ctx.stroke();
+    ctx.strokeStyle="#7a5a38"; ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.moveTo(-1,27); ctx.lineTo(2.5,47); ctx.stroke();
+  }
+  ctx.restore();
+  // head — a radial gradient (light from the upper-left) gives it a rounded, sphere-like form
+  const headGrad=ctx.createRadialGradient(-5,-23,2,0,-18,15);
+  headGrad.addColorStop(0, shade(skin,0.32));
+  headGrad.addColorStop(0.55, skin);
+  headGrad.addColorStop(1, shade(skin,-0.22));
+  ctx.fillStyle=headGrad;
+  ctx.beginPath(); ctx.arc(0,-18,13,0,Math.PI*2); ctx.fill();
+  // face
+  if(!hit){
+    ctx.fillStyle="#241a12";
+    ctx.beginPath(); ctx.arc(-4.2,-19,1.3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4.2,-19,1.3,0,Math.PI*2); ctx.fill();
+    if(mood==="angry"){
+      ctx.strokeStyle="#241a12"; ctx.lineWidth=1.4; ctx.lineCap="round";
+      ctx.beginPath(); ctx.moveTo(-7.2,-22.3); ctx.lineTo(-2.2,-20.8); ctx.moveTo(7.2,-22.3); ctx.lineTo(2.2,-20.8); ctx.stroke();
+    }
+    ctx.strokeStyle="#241a12"; ctx.lineWidth=1.2; ctx.lineCap="round";
+    ctx.beginPath();
+    if(mood==="angry"){ ctx.arc(0,-8.5,2.8,Math.PI*1.15,Math.PI*1.85,true); }
+    else if(pose==="stagger"){ ctx.arc(0,-11.5,2.6,Math.PI*1.15,Math.PI*1.85,true); }
+    else if(pose==="swing"||pose==="windup"){ ctx.arc(0,-13,2.6,Math.PI*0.1,Math.PI*0.9); }
+    else { ctx.arc(0,-13.5,2.6,Math.PI*0.15,Math.PI*0.85); }
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle="#1a0d08"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-6,-21); ctx.lineTo(-2.4,-17.5); ctx.moveTo(-2.4,-21); ctx.lineTo(-6,-17.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(2.4,-21); ctx.lineTo(6,-17.5); ctx.moveTo(6,-21); ctx.lineTo(2.4,-17.5); ctx.stroke();
+  }
+  // hair — or a plain steel helm banded in their own colour, with a mail coif at the neck, in battle
+  if(armored){
+    const helmGrad=ctx.createRadialGradient(-5,-25,2,0,-21,15);
+    helmGrad.addColorStop(0,"#c8cdd2"); helmGrad.addColorStop(0.55,"#8a939c"); helmGrad.addColorStop(1,"#565f68");
+    ctx.fillStyle=helmGrad;
+    ctx.beginPath(); ctx.arc(0,-21,13.6,Math.PI*1.0,Math.PI*2.0); ctx.fill();
+    ctx.fillStyle="#565f68"; ctx.fillRect(-1.4,-21,2.8,13);
+    ctx.strokeStyle=outfit; ctx.lineWidth=2.6;
+    ctx.beginPath(); ctx.arc(0,-19.5,13.2,Math.PI*1.05,Math.PI*1.95); ctx.stroke();
+    ctx.fillStyle="#5a636c";
+    ctx.beginPath(); ctx.arc(0,-13,11.5,Math.PI*0.05,Math.PI*0.95); ctx.fill();
+  } else {
+    ctx.fillStyle=hair;
+    ctx.beginPath();
+    if(sex==="female"){
+      ctx.arc(0,-20,14,Math.PI*0.95,Math.PI*2.05); ctx.fill();
+      ctx.fillRect(-13,-20,5,28); ctx.fillRect(8,-20,5,28);
+    } else {
+      ctx.arc(0,-22,13.5,Math.PI*1.0,Math.PI*2.0); ctx.fill();
+    }
+  }
+  // beard, for the characters who have one
+  if(beard && !hit){
+    const beardGrad=ctx.createLinearGradient(0,-14,0,6);
+    beardGrad.addColorStop(0, hair); beardGrad.addColorStop(1, shade(hair,-0.3));
+    ctx.fillStyle=beardGrad;
+    ctx.beginPath();
+    ctx.moveTo(-8,-15); ctx.quadraticCurveTo(-9,-3,0,7); ctx.quadraticCurveTo(9,-3,8,-15);
+    ctx.quadraticCurveTo(4,-9,0,-9.5); ctx.quadraticCurveTo(-4,-9,-8,-15);
+    ctx.closePath(); ctx.fill();
+    // the mustache line would otherwise bury any expression — let a mood still read through it
+    if(mood==="angry"){
+      ctx.strokeStyle=shade(hair,-0.5); ctx.lineWidth=1.1; ctx.lineCap="round";
+      ctx.beginPath(); ctx.arc(0,-8.5,2.3,Math.PI*1.2,Math.PI*1.8,true); ctx.stroke();
+    }
+  }
+  // coronet if noble, jewelled for extra flourish — or a full royal crown for the King himself (never over a helm)
+  if(noble && !armored){
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(0,-27,10,Math.PI*1.1,Math.PI*1.9); ctx.stroke();
+    const gems=["#a4303f","#d9ad4d","#3a5a8c"];
+    [-5,0,5].forEach((gx,i)=>{
+      ctx.fillStyle=gems[i];
+      ctx.beginPath(); ctx.arc(gx,-30.5+Math.abs(gx)*0.12,1.6,0,Math.PI*2); ctx.fill();
+    });
+    if(crown){
+      ctx.fillStyle="#d9ad4d";
+      [-7,0,7].forEach(px=>{
+        ctx.beginPath(); ctx.moveTo(px-3,-30); ctx.lineTo(px,-40); ctx.lineTo(px+3,-30); ctx.closePath(); ctx.fill();
+      });
+      ctx.fillStyle="#a4303f"; ctx.beginPath(); ctx.arc(0,-42,2.2,0,Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawChild(ctx,x,y,scale,skin,outfit,facing,toy){
+  facing = facing||1;
+  toy = toy||"sword";
+  ctx.save(); ctx.translate(x,y); ctx.scale(scale*facing,scale);
+  ctx.fillStyle="rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(0,40,14,4,0,0,Math.PI*2); ctx.fill();
+  // a toy, clutched proudly — which one depends on the child
+  if(toy==="horse"){
+    // a hobby-horse: a stick with a carved wooden horse's head
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(10,20); ctx.lineTo(10,-8); ctx.stroke();
+    ctx.fillStyle="#c8ad7a";
+    ctx.beginPath(); ctx.ellipse(11,-12,5.5,4,0.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#8a6a2a";
+    ctx.beginPath(); ctx.moveTo(13,-16); ctx.lineTo(17,-20); ctx.lineTo(14,-14); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#5a3a1a"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(7,-13); ctx.lineTo(9,-9); ctx.stroke();
+  } else if(toy==="doll"){
+    // a little rag doll, held in both arms
+    ctx.fillStyle="#8c2a4a"; ctx.beginPath(); ctx.moveTo(6,2); ctx.lineTo(14,2); ctx.lineTo(13,14); ctx.lineTo(7,14); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#e4d8b4"; ctx.beginPath(); ctx.arc(10,-2,3.2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#c9a227"; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(6,3); ctx.lineTo(2,8); ctx.moveTo(14,3); ctx.lineTo(18,8); ctx.stroke();
+  } else if(toy==="hoop"){
+    // a wooden hoop and stick
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.arc(11,6,7,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(15,11); ctx.lineTo(19,17); ctx.stroke();
+  } else {
+    // toy sword
+    ctx.strokeStyle="#c8ad7a"; ctx.lineWidth=3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(10,4); ctx.lineTo(10,-16); ctx.stroke();
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(5,4); ctx.lineTo(15,4); ctx.stroke();
+  }
+  const kidBodyGrad=ctx.createLinearGradient(-9,-2,12,28);
+  kidBodyGrad.addColorStop(0, shade(outfit,0.22)); kidBodyGrad.addColorStop(0.5, outfit); kidBodyGrad.addColorStop(1, shade(outfit,-0.28));
+  ctx.fillStyle=kidBodyGrad; ctx.beginPath(); ctx.moveTo(-9,-2); ctx.lineTo(9,-2); ctx.lineTo(12,28); ctx.lineTo(-12,28); ctx.closePath(); ctx.fill();
+  const kidHeadGrad=ctx.createRadialGradient(-3,-14,1,0,-12,9);
+  kidHeadGrad.addColorStop(0, shade(skin,0.32)); kidHeadGrad.addColorStop(0.6, skin); kidHeadGrad.addColorStop(1, shade(skin,-0.2));
+  ctx.fillStyle=kidHeadGrad; ctx.beginPath(); ctx.arc(0,-12,8,0,Math.PI*2); ctx.fill();
+  // a cute little face
+  ctx.fillStyle="#241a12";
+  ctx.beginPath(); ctx.arc(-2.8,-12.6,0.9,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(2.8,-12.6,0.9,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#241a12"; ctx.lineWidth=1; ctx.lineCap="round";
+  ctx.beginPath(); ctx.arc(0,-9.5,1.8,Math.PI*0.15,Math.PI*0.85); ctx.stroke();
+  ctx.fillStyle="#e08a8a"; ctx.globalAlpha=0.5;
+  ctx.beginPath(); ctx.arc(-5,-10.5,1.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5,-10.5,1.4,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+  // a little tuft of hair
+  ctx.fillStyle="#3a2818";
+  ctx.beginPath(); ctx.arc(0,-19,6.5,Math.PI*1.05,Math.PI*1.95); ctx.fill();
+  ctx.restore();
+}
+
+function bgFill(ctx,w,h,top,bot){
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,top); g.addColorStop(1,bot);
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+}
+
+/* ============================= LAYOUT HELPERS ============================= */
+function ledgerHtml(){
+  const s=S;
+  const barons = ["My Lord","My Lady"][s.player.sex==="female"?1:0];
+  const loverName = s.loverId ? NOBLES.find(n=>n.id===s.loverId).name : "None courted";
+  return `
+  <div class="ledger">
+    <h3>${escapeHtml(s.player.name||"The Baron")}'s Ledger</h3>
+    <div class="row"><span class="k">Season</span><span class="v">${seasonName()}</span></div>
+    <div class="divider-parch"></div>
+    <div class="row"><span class="k">Gold</span><span class="v">${fmt(s.gold)}g</span></div>
+    <div class="row"><span class="k">Knights</span><span class="v">${s.knights}</span></div>
+    <div class="row"><span class="k">Combat</span><span class="v">${fmt(s.combat)}</span></div>
+    <div class="meter"><i style="width:${clamp(s.combat,0,100)}%"></i></div>
+    <div class="row"><span class="k">Serfs</span><span class="v">${fmt(s.serfs)}</span></div>
+    <div class="row"><span class="k">Morale</span><span class="v">${fmt(s.morale)}%</span></div>
+    <div class="meter"><i style="width:${s.morale}%"></i></div>
+    <div class="row"><span class="k">Productivity</span><span class="v">${fmt(s.productivity)}%</span></div>
+    <div class="meter gold"><i style="width:${s.productivity}%"></i></div>
+    <div class="divider-parch"></div>
+    <div class="row"><span class="k">Relations: Barons</span><span class="v">${fmt(s.baronRelation)}%</span></div>
+    <div class="meter"><i style="width:${s.baronRelation}%"></i></div>
+    <div class="row"><span class="k">Relations: King John</span><span class="v">${fmt(s.kingRelation)}%</span></div>
+    <div class="meter seal"><i style="width:${s.kingRelation}%"></i></div>
+    <div class="row"><span class="k">Beloved</span><span class="v" style="font-size:0.68rem; text-align:right;">${escapeHtml(loverName)}</span></div>
+    ${s.loverId?`<div class="row"><span class="k">Beloved's Affection</span><span class="v">${s.relations[s.loverId]}%</span></div><div class="meter seal"><i style="width:${s.relations[s.loverId]}%"></i></div>`:""}
+    ${s.married?`<div class="row"><span class="k">Children</span><span class="v">${s.children.length}</span></div>`:""}
+    ${s.warUnlocked?`<div class="divider-parch"></div><div class="row"><span class="k">King's Army</span><span class="v">${fmt(s.kingArmy)}%</span></div><div class="meter seal"><i style="width:${s.kingArmy}%"></i></div>`:""}
+  </div>`;
+}
+function layout(canvasW,canvasH,panelHtml){
+  return `
+  <div class="game-layout">
+    ${ledgerHtml()}
+    <div class="right-pane">
+      <div class="viewport"><canvas id="gameCanvas" width="${canvasW}" height="${canvasH}"></canvas></div>
+      <div class="panel">${panelHtml}</div>
+    </div>
+  </div>`;
+}
+function getCanvas(){ return $("#gameCanvas"); }
+function toast(title,text,ms){
+  const d=document.createElement("div");
+  d.className="toast";
+  d.innerHTML=`<h4>${escapeHtml(title)}</h4><div>${text}</div>`;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(), ms||3600);
+}
+function modal(title,bodyHtml,buttons){
+  const back=document.createElement("div");
+  back.className="modal-backdrop";
+  const box=document.createElement("div");
+  box.className="modal";
+  box.innerHTML=`<h3>${escapeHtml(title)}</h3><div>${bodyHtml}</div><div class="btnrow" style="margin-top:14px;" id="modalBtns"></div>`;
+  back.appendChild(box);
+  document.body.appendChild(back);
+  const btnrow = box.querySelector("#modalBtns");
+  buttons.forEach(b=>{
+    const btn=document.createElement("button");
+    btn.className="btn "+(b.cls||"");
+    btn.textContent=b.label;
+    btn.onclick=()=>{ back.remove(); b.onClick&&b.onClick(); };
+    btnrow.appendChild(btn);
+  });
+  return back;
+}
+
+/* ============================= TITLE / CREATION ============================= */
+function screenTitle(){
+  stopActiveAnim();
+  Audio1.stop();
+  const existing = loadSave();
+  stage.innerHTML = `
+  <div class="center-screen">
+    <div>
+      <div class="game-title"><span class="drop">T</span>he Baron<span class="drop">s'</span> War</div>
+      <div class="tagline">England, on the road to Runnymede &mdash; 1214</div>
+    </div>
+    <p style="max-width:520px;">Play as a baron or baroness of the English realm. Manage your barony, court a noble
+    love, prove yourself in the tourney, and reckon with a king who taxes without counsel &mdash;
+    until the day the barons of England force him to put his seal to a great charter of liberties.</p>
+    <div class="btnrow">
+      <button class="btn gold" id="newGameBtn">Begin a New Reign</button>
+      ${existing?`<button class="btn steel" id="continueBtn">Continue Saved Reign</button>`:""}
+    </div>
+    <p class="footer-note">Built for classroom use &mdash; a fictionalized, playable approach to the context of Magna Carta.</p>
+    <p class="footer-note">&copy; 2026 K. Genest</p>
+  </div>`;
+  $("#newGameBtn").onclick=()=>{ newGame(); screenCreation(); };
+  if(existing) $("#continueBtn").onclick=()=>{
+    S=existing;
+    // fill in any fields introduced since this save was written
+    if(S.romanceCap===undefined) S.romanceCap=2;
+    if(S.romanceUsed===undefined) S.romanceUsed=0;
+    if(!S.romancePairsUsed) S.romancePairsUsed=[];
+    if(S.feastBaronsUsed===undefined) S.feastBaronsUsed=false;
+    updateSeasonLabel(); Audio1.setMode("ambient"); Audio1.start(); screenKeep();
+  };
+}
+
+function screenCreation(){
+  updateSeasonLabel();
+  const skins=["#f0d3ab","#e8c39a","#d9a86c","#c98f5c","#a86c3c","#7a4a28"];
+  const outfits=["#7c1f2b","#3a5a8c","#3f4f37","#5c3a8c","#b8892b","#4b5560"];
+  const hairs=["#1c1410","#2a1c10","#3a2a18","#5a3a1a","#8a5a2a","#c9a227","#9a3a1a","#a8a8a8"];
+  stage.innerHTML = `
+  <div class="center-screen" style="min-height:auto;">
+    <h2 class="section"><span class="drop">C</span>reate Your Baron</h2>
+    <div class="creation-grid" style="max-width:640px;">
+      <div>
+        <div class="field">
+          <label>Name</label>
+          <input type="text" id="nameInput" maxlength="24" placeholder="e.g. Godfrey of Ashbourne" value="${escapeHtml(S.player.name)}" />
+        </div>
+        <div class="field">
+          <label>You are addressed as</label>
+          <div class="seg">
+            <button data-sex="male" class="${S.player.sex==='male'?'sel':''}">Baron (he/him)</button>
+            <button data-sex="female" class="${S.player.sex==='female'?'sel':''}">Baroness (she/her)</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Skin Tone</label>
+          <div class="swatchrow" id="skinRow"></div>
+        </div>
+        <div class="field">
+          <label>Outfit Colour</label>
+          <div class="swatchrow" id="outfitRow"></div>
+        </div>
+        <div class="field">
+          <label>Hair Colour</label>
+          <div class="swatchrow" id="hairRow"></div>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+        <div class="viewport" style="width:220px; aspect-ratio:1/1;"><canvas id="previewCanvas" width="220" height="220"></canvas></div>
+        <p class="helptext">Preview</p>
+      </div>
+    </div>
+    <button class="btn seal" id="beginBtn" style="margin-top:6px;">Take Up the Barony</button>
+  </div>`;
+  function swatches(rowId,colors,key){
+    const row=$("#"+rowId);
+    row.innerHTML = colors.map(c=>`<div class="swatch ${S.player[key]===c?'sel':''}" style="background:${c}" data-c="${c}"></div>`).join("");
+    row.querySelectorAll(".swatch").forEach(sw=>{
+      sw.onclick=()=>{ S.player[key]=sw.dataset.c; swatches(rowId,colors,key); drawPreview(); };
+    });
+  }
+  swatches("skinRow",skins,"skin");
+  swatches("outfitRow",outfits,"outfit");
+  swatches("hairRow",hairs,"hair");
+  document.querySelectorAll("[data-sex]").forEach(b=>{
+    b.onclick=()=>{ S.player.sex=b.dataset.sex;
+      document.querySelectorAll("[data-sex]").forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel"); drawPreview(); };
+  });
+  $("#nameInput").oninput=e=>{ S.player.name=e.target.value; };
+  function drawPreview(){
+    const c=$("#previewCanvas"); const ctx=c.getContext("2d");
+    ctx.clearRect(0,0,220,220);
+    bgFill(ctx,220,220,"#2a2016","#0f0b08");
+    drawFigure(ctx,{x:110,y:130,scale:1.5,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true,weapon:"sword"});
+  }
+  drawPreview();
+  $("#beginBtn").onclick=()=>{
+    if(!S.player.name.trim()) S.player.name = S.player.sex==="female"?"Baroness Eleanor":"Baron Godfrey";
+    Audio1.resumeCtx(); Audio1.setMode("ambient"); Audio1.start();
+    save();
+    screenKeep();
+  };
+}
+
+/* ============================= KEEP HUB ============================= */
+function drawStoneWall(ctx,w,h,top,rowH,baseColor){
+  let row=0;
+  for(let y=top; y<h; y+=rowH){
+    const offset = (row%2===0)?0:rowH*0.9;
+    row++;
+    for(let x=-rowH; x<w+rowH; x+=rowH*1.8){
+      const shade1 = Math.random()*0.06-0.03;
+      ctx.fillStyle = shade(baseColor, shade1);
+      ctx.fillRect(x+offset, y, rowH*1.7, rowH-2);
+      ctx.strokeStyle="rgba(0,0,0,0.35)"; ctx.lineWidth=1;
+      ctx.strokeRect(x+offset, y, rowH*1.7, rowH-2);
+    }
+  }
+}
+// A layered, flickering flame — several teardrop tongues, each with its own jitter frequency
+// and phase, so the fire reads as organic motion rather than a single pulsing blob.
+function drawFlame(ctx,x,y,w,h,t,seed){
+  seed = seed||0;
+  const flicker = 1 + Math.sin(t*9+seed)*0.11 + Math.sin(t*17+seed*2.3)*0.06 + Math.sin(t*29+seed*3.7)*0.04;
+  const sway = Math.sin(t*4.1+seed)*w*0.1 + Math.sin(t*10.7+seed*1.6)*w*0.05;
+  ctx.save(); ctx.translate(x,y);
+  const layers=[
+    {wf:1.0, hf:1.0, c0:"#5c1400", c1:"#ff5a1f"},
+    {wf:0.72,hf:0.8, c0:"#c23e0a", c1:"#ff9a2b"},
+    {wf:0.44,hf:0.56,c0:"#ff8a2b", c1:"#ffd257"},
+    {wf:0.2, hf:0.32,c0:"#ffd257", c1:"#fff8d8"}
+  ];
+  layers.forEach((L,i)=>{
+    const jt = Math.sin(t*(12+i*4)+seed+i*1.3)*(w*0.07);
+    const lw=w*L.wf, lh=h*L.hf*flicker;
+    ctx.beginPath();
+    ctx.moveTo(sway*0.3, 2);
+    ctx.quadraticCurveTo(-lw*0.5+jt+sway, -lh*0.32, jt*0.4+sway*0.6, -lh);
+    ctx.quadraticCurveTo(lw*0.5+jt+sway, -lh*0.32, sway*0.3, 2);
+    ctx.closePath();
+    const g=ctx.createLinearGradient(0,2,0,-lh);
+    g.addColorStop(0,L.c0); g.addColorStop(1,L.c1);
+    ctx.fillStyle=g; ctx.fill();
+  });
+  ctx.restore();
+}
+function drawEmbers(ctx,x,y,count,t,seed){
+  seed=seed||0;
+  for(let i=0;i<count;i++){
+    const cycle = (t*0.55+i*0.37+seed) % 1;
+    const ex = x + Math.sin(t*1.7+i*2.1+seed)*11;
+    const ey = y - cycle*58;
+    const alpha = (1-cycle)*0.75;
+    ctx.fillStyle = `rgba(255,${150+((i*37)%50)},60,${alpha.toFixed(2)})`;
+    ctx.beginPath(); ctx.arc(ex,ey,Math.max(0.4,1.6-cycle),0,Math.PI*2); ctx.fill();
+  }
+}
+function drawTorch(ctx,x,y,t){
+  ctx.fillStyle="#241811"; ctx.fillRect(x-2,y,4,16);
+  ctx.fillStyle="#3a2c1a"; ctx.fillRect(x-6,y-4,12,5);
+  const flick = 1+Math.sin(t*9+x)*0.12+Math.sin(t*21+x*0.7)*0.06;
+  const g=ctx.createRadialGradient(x,y-14,2,x,y-14,26*flick);
+  g.addColorStop(0,"rgba(255,210,120,0.55)"); g.addColorStop(1,"rgba(255,210,120,0)");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-14,26*flick,0,Math.PI*2); ctx.fill();
+  drawFlame(ctx, x, y-3, 13, 23, t, x*0.13);
+}
+function drawKeepScene(ctx,w,h,t){
+  t = t||0;
+  bgFill(ctx,w,h,"#4a3826","#160f0a");
+  drawStoneWall(ctx,w,h*0.62,0,h*0.09,"#463526");
+  // ceiling beams
+  ctx.fillStyle="#1c130c";
+  for(let i=0;i<4;i++) ctx.fillRect(w*0.05+i*w*0.24, 0, 14, h*0.06);
+  // flagstone floor
+  ctx.fillStyle="#2a2018"; ctx.fillRect(0,h*0.62,w,h*0.38);
+  for(let x=0;x<w;x+=44){
+    ctx.strokeStyle="rgba(0,0,0,0.35)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,h*0.62); ctx.lineTo(x-30,h); ctx.stroke();
+  }
+  ctx.strokeStyle="rgba(0,0,0,0.3)";
+  for(let y=h*0.68;y<h;y+=22){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  // rug before hearth
+  ctx.fillStyle="#5c1f2b"; ctx.beginPath(); ctx.ellipse(w*0.5,h*0.86,120,26,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(w*0.5,h*0.86,110,21,0,0,Math.PI*2); ctx.stroke();
+  // arched window
+  const wx=w*0.86, wy=h*0.1, ww=w*0.1, wh=h*0.34;
+  const skyg=ctx.createLinearGradient(0,wy,0,wy+wh);
+  skyg.addColorStop(0,"#e8a75c"); skyg.addColorStop(1,"#3a4a7c");
+  ctx.fillStyle=skyg;
+  ctx.beginPath();
+  ctx.moveTo(wx,wy+wh); ctx.lineTo(wx,wy+ww/2);
+  ctx.arc(wx+ww/2,wy+ww/2,ww/2,Math.PI,0);
+  ctx.lineTo(wx+ww,wy+wh); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle="#5c4a30"; ctx.lineWidth=4; ctx.stroke();
+  ctx.strokeStyle="#3a2c1a"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(wx+ww/2,wy); ctx.lineTo(wx+ww/2,wy+wh); ctx.moveTo(wx,wy+wh*0.55); ctx.lineTo(wx+ww,wy+wh*0.55); ctx.stroke();
+  // hearth
+  ctx.fillStyle="#241811"; ctx.fillRect(w*0.05,h*0.3,w*0.16,h*0.56);
+  ctx.fillStyle="#3a2c1a"; ctx.fillRect(w*0.035,h*0.28,w*0.19,0.03*h);
+  ctx.fillStyle="#100a06"; ctx.fillRect(w*0.07,h*0.5,w*0.12,h*0.36);
+  const glowPulse = 1+Math.sin(t*6)*0.08+Math.sin(t*13.3)*0.04;
+  const hg=ctx.createRadialGradient(w*0.13,h*0.76,10,w*0.13,h*0.76,130*glowPulse);
+  hg.addColorStop(0,"rgba(255,150,60,0.4)"); hg.addColorStop(1,"rgba(255,150,60,0)");
+  ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(w*0.13,h*0.76,130*glowPulse,0,Math.PI*2); ctx.fill();
+  // glowing log bed beneath the flames
+  ctx.fillStyle="#3a2818"; ctx.fillRect(w*0.095,h*0.855,w*0.075,5);
+  ctx.fillStyle="#8a2f0a"; ctx.fillRect(w*0.1,h*0.852,w*0.065,3);
+  drawFlame(ctx, w*0.13, h*0.86, 40, 62, t, 1.7);
+  drawFlame(ctx, w*0.108, h*0.86, 22, 40, t, 4.2);
+  drawFlame(ctx, w*0.155, h*0.86, 20, 36, t, 7.9);
+  drawEmbers(ctx, w*0.13, h*0.78, 5, t, 2.3);
+  // wall torches
+  drawTorch(ctx,w*0.3,h*0.34,t);
+  drawTorch(ctx,w*0.72,h*0.34,t);
+  // banners with fringe and simple charge
+  [0.42,0.6].forEach((fx,i)=>{
+    const bc = i===0?"#7c1f2b":"#3f4f37";
+    ctx.fillStyle="#1c130c"; ctx.fillRect(w*fx-4,h*0.03,w*0.05+8,6);
+    ctx.fillStyle=bc; ctx.fillRect(w*fx, h*0.05, w*0.05, h*0.3);
+    ctx.fillStyle=shade(bc,-0.3);
+    for(let f=0;f<4;f++){ ctx.beginPath(); ctx.moveTo(w*fx+f*(w*0.05/4), h*0.35); ctx.lineTo(w*fx+(f+0.5)*(w*0.05/4), h*0.38); ctx.lineTo(w*fx+(f+1)*(w*0.05/4), h*0.35); ctx.fill(); }
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(w*fx+w*0.025,h*0.1); ctx.lineTo(w*fx+w*0.025,h*0.28); ctx.moveTo(w*fx+w*0.008,h*0.19); ctx.lineTo(w*fx+w*0.042,h*0.19); ctx.stroke();
+  });
+  // a wooden chair near the hearth
+  ctx.fillStyle="#3a2818"; ctx.fillRect(w*0.22,h*0.6,26,44); ctx.fillRect(w*0.22,h*0.5,26,10);
+  drawFigure(ctx,{x:w*0.5,y:h*0.78,scale:1.4,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true});
+  // the baron's spouse, standing with them in the hall, if wed
+  if(S.married && S.spouseId){
+    const sp = NOBLES.find(n=>n.id===S.spouseId);
+    if(sp) drawFigure(ctx,{x:w*0.39,y:h*0.79,scale:1.3,sex:sp.sex,skin:sp.skin,outfit:sp.outfit,hair:sp.hair,noble:true,facing:1,beard:!!sp.beard});
+  }
+  // up to six children, in a little arc before the hearth
+  const kidSpots = [[0.60,0.90],[0.68,0.87],[0.75,0.91],[0.56,0.84],[0.72,0.83],[0.79,0.86]];
+  S.children.slice(0,6).forEach((kid,i)=>{
+    const [fx,fy]=kidSpots[i];
+    drawChild(ctx,w*fx,h*fy,0.95,S.player.skin,shade(S.player.outfit, kid.gender==="female"?0.15:-0.1), i%2===0?1:-1, kid.toy);
+  });
+}
+function screenKeep(reason){
+  stopActiveAnim();
+  updateSeasonLabel(); save();
+  Audio1.setMode("ambient");
+  const child = S.children.length>0;
+  stage.innerHTML = layout(800,450, `
+    <p><strong>${escapeHtml(S.player.name)}'s Norman Keep</strong> &mdash; ${seasonName()}. ${reason||"The hall is quiet but for the crackle of the hearth."}
+    ${child?(S.children.length>1?` Your children totter near the hearth-stones.`:` Your child totters near the hearth-stones.`):""}</p>
+    <div class="btnrow">
+      <button class="btn" id="btnVillage">Visit the Village</button>
+      <button class="btn" id="btnRomance">Courtly Romance</button>
+      <button class="btn" id="btnTournament">Tournament</button>
+      <button class="btn" id="btnSteward">Consult the Steward</button>
+      <button class="btn seal" id="btnBrigands">Battle Brigands</button>
+      <button class="btn gold" id="btnFeast">Hold a Feast</button>
+      ${S.warUnlocked && !S.gameEnded ? `<button class="btn seal" id="btnMarshal">Muster with the Marshal &mdash; Ride to War</button>`:""}
+      ${child?`<button class="btn steel" id="btnChild">Speak to Your ${S.children.length>1?"Children":"Child"}</button>`:""}
+      <button class="btn steel" id="btnAdvance">Advance the Season</button>
+      <button class="btn steel small" id="btnHelp" style="margin-left:auto;">? Help</button>
+    </div>
+  `);
+  const keepStart = performance.now();
+  function animateKeep(){
+    const canvas = getCanvas();
+    if(!canvas){ activeAnimId=null; return; }
+    drawKeepScene(canvas.getContext("2d"), 800, 450, (performance.now()-keepStart)/1000);
+    activeAnimId = requestAnimationFrame(animateKeep);
+  }
+  activeAnimId = requestAnimationFrame(animateKeep);
+  $("#btnVillage").onclick=()=>screenVillage();
+  $("#btnRomance").onclick=()=>screenRomance();
+  $("#btnTournament").onclick=()=>startCombat("tournament");
+  $("#btnSteward").onclick=()=>screenSteward();
+  $("#btnBrigands").onclick=()=>startCombat("brigands");
+  $("#btnFeast").onclick=()=>screenFeast();
+  $("#btnAdvance").onclick=()=>endSeason("You chose to let the season pass quietly.");
+  if(S.warUnlocked && !S.gameEnded) $("#btnMarshal").onclick=()=>{
+    modal("The Marshal Awaits","<p>\"The barons stand with you, my lord. Say the word and we ride against the King's men.\"</p><p>Muster your knights and give battle?</p>",[
+      {label:"Ride to War", cls:"seal", onClick:()=>startCombat("war")},
+      {label:"Not Yet", cls:"steel"}
+    ]);
+  };
+  $("#btnHelp").onclick=()=>{
+    modal("How to Rule Your Barony", `
+      <div style="text-align:left;">
+      <p><strong>Visit the Village</strong> &mdash; Inspect your crops, then beat the serfs with your mace (raises productivity, hurts morale) or reward them with gold (raises both, up to a cap).</p>
+      <p><strong>Courtly Romance</strong> &mdash; Call on the six eligible nobles and hold conversation; if a bond grows strong enough you may propose marriage and, later, start a family. You may hold only a couple of these conversations each season, and never the same topic with the same person twice in one season &mdash; holding a feast opens two further conversations there.</p>
+      <p><strong>Tournament</strong> &mdash; A friendly duel against a rival knight to sharpen your combat skill, with little risk. A higher combat skill makes you quicker to spot an opening and better at catching foes off guard in every fight to come.</p>
+      <p><strong>Consult the Steward</strong> &mdash; Spend gold to invest in agriculture (raises productivity and its cap) or train new knights (raises your knight count and combat).</p>
+      <p><strong>Battle Brigands</strong> &mdash; Clear brigands from the road. Victory raises your standing with other barons and lifts peasant morale; defeat costs a ransom.</p>
+      <p><strong>Hold a Feast</strong> &mdash; Spend gold to host the court: meet your suitors again and win favour with the other barons &mdash; with the King's favour low enough, that goodwill may let you speak of rebellion.</p>
+      ${S.warUnlocked?`<p><strong>Muster with the Marshal</strong> &mdash; Ride to war against the King's knights. Victory wears down his army; defeat costs a ransom and knights.</p>`:""}
+      <p><strong>Advance the Season</strong> &mdash; Let the season pass quietly and move on to the next, triggering whatever the season brings.</p>
+      </div>
+    `, [{label:"Understood", cls:"gold"}]);
+  };
+  if(child) $("#btnChild").onclick=()=>{
+    const kid = choice(S.children);
+    const lines=[`${kid.name} squeals and swings their toy sword at your boot.`,`${kid.name} hides behind your leg, then peeks out and giggles.`,
+      `${kid.name} presents you with a fistful of rushes from the floor, very proud.`,`${kid.name} tries to lift your real sword and nearly topples over.`,
+      `${kid.name} declares themself a knight and challenges you to single combat, right there in the hall.`];
+    toast("Your Little One", choice(lines));
+  };
+}
+
+/* ============================= VILLAGE ============================= */
+function drawVillageScene(ctx,w,h,beatAnim,rewardAnim){
+  const skyG=ctx.createLinearGradient(0,0,0,h*0.55);
+  skyG.addColorStop(0,"#bfe6f0"); skyG.addColorStop(1,"#d8ecb0");
+  ctx.fillStyle=skyG; ctx.fillRect(0,0,w,h*0.55);
+  // sun and clouds
+  const sg=ctx.createRadialGradient(w*0.86,h*0.14,4,w*0.86,h*0.14,40);
+  sg.addColorStop(0,"rgba(255,240,180,0.9)"); sg.addColorStop(1,"rgba(255,240,180,0)");
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(w*0.86,h*0.14,40,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#fff8e0"; ctx.beginPath(); ctx.arc(w*0.86,h*0.14,14,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,0.85)";
+  [[0.15,0.12,26],[0.32,0.2,18],[0.55,0.1,22]].forEach(([cx,cy,r])=>{
+    ctx.beginPath(); ctx.arc(w*cx,h*cy,r,0,Math.PI*2); ctx.arc(w*cx+r*0.8,h*cy+4,r*0.7,0,Math.PI*2); ctx.arc(w*cx-r*0.8,h*cy+5,r*0.6,0,Math.PI*2); ctx.fill();
+  });
+  // distant, hazy tree line on the horizon
+  ctx.fillStyle="#7a9880";
+  for(let i=0;i<10;i++){ ctx.beginPath(); ctx.arc(w*0.0+i*w*0.11, h*0.39, 12,0,Math.PI*2); ctx.fill(); }
+  // rolling hills the village sits among — huts are anchored on their crests, not floating
+  const hillBand = [
+    {cx:w*0.02, cy:h*0.55, rx:w*0.24, ry:h*0.15, color:"#6f9048"},
+    {cx:w*0.24, cy:h*0.52, rx:w*0.22, ry:h*0.18, color:"#7a9a52"},
+    {cx:w*0.46, cy:h*0.55, rx:w*0.2,  ry:h*0.14, color:"#6a8a48"},
+    {cx:w*0.66, cy:h*0.505,rx:w*0.24, ry:h*0.19, color:"#7a9a52"},
+    {cx:w*0.88, cy:h*0.54, rx:w*0.22, ry:h*0.15, color:"#6f9048"},
+    {cx:w*1.02, cy:h*0.55, rx:w*0.2,  ry:h*0.14, color:"#7a9a52"}
+  ];
+  hillBand.forEach(hd=>{
+    ctx.fillStyle=hd.color;
+    ctx.beginPath(); ctx.ellipse(hd.cx,hd.cy,hd.rx,hd.ry,0,Math.PI,Math.PI*2); ctx.closePath(); ctx.fill();
+  });
+  ctx.fillStyle="#7a9a52"; ctx.fillRect(0,h*0.55,w,h*0.45);
+  // fence bordering the tilled field
+  ctx.strokeStyle="#5a4028"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,h*0.58); ctx.lineTo(w,h*0.58); ctx.stroke();
+  for(let x=0;x<w;x+=34){ ctx.beginPath(); ctx.moveTo(x,h*0.55); ctx.lineTo(x,h*0.6); ctx.stroke(); }
+  // furrows scaled by crop status
+  const rows=7;
+  for(let r=0;r<rows;r++){
+    const yy=h*0.62+r*((h*0.36)/rows);
+    ctx.strokeStyle = S.cropStatus>60 ? "#4f6a2f" : S.cropStatus>30 ? "#6a5a2f":"#7a4a2f";
+    ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(w*0.05,yy); ctx.lineTo(w*0.95,yy); ctx.stroke();
+    // little crop tufts along thriving rows
+    if(S.cropStatus>45){
+      ctx.strokeStyle="#3f6a2f"; ctx.lineWidth=1.5;
+      for(let x=w*0.08;x<w*0.92;x+=18){ ctx.beginPath(); ctx.moveTo(x,yy); ctx.lineTo(x,yy-5); ctx.stroke(); }
+    }
+  }
+  // village huts, thatched, sitting squarely on the crests of the hills (not floating)
+  function drawHutOnHill(cx,baseY){
+    const bw=64, bh=42;
+    ctx.fillStyle="#8a7048"; ctx.fillRect(cx-bw/2,baseY-bh,bw,bh);
+    ctx.fillStyle="#5a3a24";
+    ctx.beginPath(); ctx.moveTo(cx-bw/2-10,baseY-bh); ctx.lineTo(cx,baseY-bh-24); ctx.lineTo(cx+bw/2+10,baseY-bh); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#3a2818"; ctx.fillRect(cx-8,baseY-20,16,20);
+    ctx.fillStyle="rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.ellipse(cx,baseY+3,bw*0.55,5,0,0,Math.PI*2); ctx.fill();
+  }
+  drawHutOnHill(hillBand[1].cx, hillBand[1].cy-hillBand[1].ry+6);
+  drawHutOnHill(hillBand[4].cx, hillBand[4].cy-hillBand[4].ry+6);
+  // a well, set on the near hillside just before the tilled field begins
+  const wellX=w*0.46, wellBase=hillBand[2].cy-hillBand[2].ry+34;
+  ctx.fillStyle="#8a8a8a"; ctx.fillRect(wellX-13,wellBase-20,26,20);
+  ctx.strokeStyle="#5a4028"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(wellX-14,wellBase-24); ctx.lineTo(wellX-14,wellBase-18);
+  ctx.moveTo(wellX+14,wellBase-24); ctx.lineTo(wellX+14,wellBase-18);
+  ctx.moveTo(wellX-16,wellBase-24); ctx.lineTo(wellX+16,wellBase-24); ctx.stroke();
+  // a few chickens pecking about
+  ctx.fillStyle="#e8dcc0";
+  [[0.2,0.56],[0.4,0.59],[0.63,0.57]].forEach(([cx,cy])=>{ ctx.beginPath(); ctx.arc(w*cx,h*cy,4,0,Math.PI*2); ctx.fill(); });
+  // peasants tilling
+  for(let i=0;i<4;i++){
+    const px = w*0.2+i*w*0.16, py=h*0.72;
+    drawFigure(ctx,{x:px,y:py,scale:0.9,sex:i%2===0?"male":"female",skin:"#c98f5c",outfit:"#6a5a3a",hair:"#2a1c10",
+      pose: beatAnim && i===0 ? "stagger" : "idle"});
+  }
+  if(beatAnim){
+    drawFigure(ctx,{x:w*0.5,y:h*0.72,scale:1.1,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true,weapon:"mace",pose:"swing"});
+  }
+  if(rewardAnim){
+    ctx.fillStyle="rgba(217,173,77,0.9)";
+    for(let i=0;i<10;i++){ ctx.beginPath(); ctx.arc(w*0.3+Math.random()*w*0.4, h*0.5+Math.random()*h*0.2,3,0,Math.PI*2); ctx.fill(); }
+  }
+}
+function screenVillage(){
+  stopActiveAnim();
+  const rewardCost = Math.round(30+S.serfs*0.4);
+  stage.innerHTML = layout(800,450,`
+    <p><strong>The Manorial Village</strong> &mdash; peasants till the soil under a wide sky.</p>
+    <div class="row" style="display:flex; justify-content:space-between; font-family:var(--font-data); font-size:0.85rem; margin-bottom:8px;">
+      <span>Crop Status: <strong>${fmt(S.cropStatus)}%</strong></span>
+      <span>Serf Morale: <strong>${fmt(S.morale)}%</strong></span>
+      <span>Productivity: <strong>${fmt(S.productivity)}% / cap ${fmt(S.productivityCap)}%</strong></span>
+    </div>
+    <p class="helptext" id="cropReport">Click "Inspect the Crops" to hear the reeve's report.</p>
+    <div class="btnrow">
+      <button class="btn" id="btnInspect">Inspect the Crops</button>
+      <button class="btn seal" id="btnBeat">Beat the Serfs (with your mace)</button>
+      <button class="btn gold" id="btnReward">Reward the Serfs (${rewardCost}g)</button>
+      <button class="btn steel" id="btnBack">Return to the Keep</button>
+    </div>
+  `);
+  const ctx=getCanvas().getContext("2d");
+  drawVillageScene(ctx,800,450,false,false);
+  $("#btnInspect").onclick=()=>{
+    let report;
+    if(S.cropStatus>75) report="The reeve beams: \"The fields have never looked better, my lord.\"";
+    else if(S.cropStatus>45) report="The reeve shrugs: \"Fair enough. We'll get by.\"";
+    else report="The reeve wrings his hands: \"The soil is tired, and so are the people working it.\"";
+    $("#cropReport").textContent = report+" Productivity governs how much gold the harvest brings and whether the village grows or shrinks.";
+  };
+  $("#btnBeat").onclick=()=>{
+    S.productivity = clamp(S.productivity+10, 0, S.productivityCap);
+    S.morale = clamp(S.morale-15, 0, 100);
+    S.cropStatus = clamp(S.cropStatus-3, 0, 100);
+    if(S.morale<15 && Math.random()<0.4){ const lost=randi(1,5); S.serfs=Math.max(0,S.serfs-lost); toast("They Flee in the Night", `${lost} serfs abandon the manor rather than suffer further.`); }
+    drawVillageScene(ctx,800,450,true,false);
+    save();
+    setTimeout(()=>{ screenVillage(); },550);
+  };
+  $("#btnReward").onclick=()=>{
+    if(S.gold<rewardCost){ toast("Empty Coffers","You cannot afford to reward the serfs this season."); return; }
+    S.gold -= rewardCost;
+    S.morale = clamp(S.morale+10,0,100);
+    S.productivity = clamp(S.productivity+5,0,S.productivityCap);
+    S.cropStatus = clamp(S.cropStatus+3, 0, 100);
+    drawVillageScene(ctx,800,450,false,true);
+    save();
+    setTimeout(()=>{ screenVillage(); },550);
+  };
+  $("#btnBack").onclick=()=>screenKeep();
+}
+
+/* ============================= STEWARD ============================= */
+function screenSteward(){
+  stopActiveAnim();
+  const agriCost = Math.round(60 + S.productivityCap*1.5);
+  const knightCost = Math.round(50 + S.knights*12);
+  stage.innerHTML = layout(800,450,`
+    <p><strong>The Steward's Chamber</strong> &mdash; ledgers, wax, and a very patient old man.</p>
+    <p>"My lord, we may invest in the land, or in steel. Both cost coin, but coin well spent."</p>
+    <div class="btnrow">
+      <button class="btn" id="btnAgri">Invest in Agriculture (${agriCost}g &rarr; raises productivity and its cap)</button>
+      <button class="btn steel" id="btnKnights">Train Knights (${knightCost}g &rarr; +1 knight, +combat)</button>
+      <button class="btn gold" id="btnBack">Return to the Keep</button>
+    </div>
+    <p class="helptext">Gold: ${fmt(S.gold)} &middot; Productivity cap: ${fmt(S.productivityCap)}% &middot; Knights: ${S.knights}</p>
+  `);
+  const ctx=getCanvas().getContext("2d");
+  const w=800,h=450;
+  bgFill(ctx,w,h,"#3a2c1e","#100b07");
+  drawStoneWall(ctx,w,h*0.58,0,h*0.1,"#3a2c1e");
+  // cool daylight window
+  const wg=ctx.createLinearGradient(0,h*0.06,0,h*0.32);
+  wg.addColorStop(0,"#a8c8d8"); wg.addColorStop(1,"#5a7a9a");
+  ctx.fillStyle=wg; ctx.fillRect(w*0.06,h*0.08,w*0.14,h*0.24);
+  ctx.strokeStyle="#241811"; ctx.lineWidth=4; ctx.strokeRect(w*0.06,h*0.08,w*0.14,h*0.24);
+  ctx.beginPath(); ctx.moveTo(w*0.06+w*0.07,h*0.08); ctx.lineTo(w*0.06+w*0.07,h*0.32); ctx.moveTo(w*0.06,h*0.2); ctx.lineTo(w*0.2,h*0.2); ctx.stroke();
+  // shelves of ledgers and scrolls
+  [0.72,0.82,0.92].forEach(fy=>{
+    ctx.fillStyle="#2a1c10"; ctx.fillRect(w*0.68,h*fy,w*0.28,h*0.02);
+    let bx=w*0.685;
+    for(let i=0;i<9;i++){
+      ctx.fillStyle=["#7c1f2b","#3f4f37","#4b5560","#5c3a8c","#8a6a2a"][i%5];
+      const bw=8+(i%3)*3;
+      ctx.fillRect(bx,h*fy-h*0.04,bw,h*0.04);
+      bx+=bw+2;
+    }
+  });
+  // floor rug
+  ctx.fillStyle="#4b5560"; ctx.globalAlpha=0.4; ctx.fillRect(w*0.28,h*0.78,w*0.44,h*0.16); ctx.globalAlpha=1;
+  // the steward's table, scattered with scrolls and a ledger
+  ctx.fillStyle="#4a3a24"; ctx.fillRect(280,260,240,120);
+  ctx.fillStyle="#241811"; ctx.fillRect(272,378,256,14);
+  ctx.fillStyle="#e4d8b4"; ctx.fillRect(320,252,60,16);
+  ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=1; ctx.strokeRect(320,252,60,16);
+  ctx.strokeStyle="#c8ad7a"; ctx.lineWidth=6; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(410,258); ctx.lineTo(440,254); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(410,258); ctx.lineTo(440,262); ctx.stroke();
+  drawFigure(ctx,{x:400,y:330,scale:1.1,sex:"male",skin:"#c98f5c",outfit:"#4b5560",hair:"#888888"});
+  drawFigure(ctx,{x:500,y:330,scale:1.2,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true});
+  $("#btnAgri").onclick=()=>{
+    if(S.gold<agriCost){ toast("Empty Coffers","There is not enough gold for this investment."); return; }
+    S.gold-=agriCost;
+    S.productivityCap=clamp(S.productivityCap+8,0,100);
+    S.productivity=clamp(S.productivity+6,0,S.productivityCap);
+    save(); toast("Fields Improved","The steward orders new drainage ditches and crop rotation. Productivity rises at once, and its ceiling higher still.");
+    screenSteward();
+  };
+  $("#btnKnights").onclick=()=>{
+    if(S.gold<knightCost){ toast("Empty Coffers","There is not enough gold to train another knight."); return; }
+    S.gold-=knightCost; S.knights+=1; S.combat=clamp(S.combat+2,0,100);
+    save(); toast("A New Knight Sworn","A young man-at-arms swears fealty and takes up training.");
+    screenSteward();
+  };
+  $("#btnBack").onclick=()=>screenKeep();
+}
+
+/* ============================= ROMANCE ============================= */
+function screenRomance(returnTo,returnLabel){
+  stopActiveAnim();
+  returnTo = returnTo || screenKeep;
+  returnLabel = returnLabel || "Return to the Keep";
+  stage.innerHTML = layout(800,300,`<div id="romancePanel"></div>`);
+  const ctx=getCanvas().getContext("2d");
+  bgFill(ctx,800,300,"#3a2c20","#160f0a");
+  ctx.fillStyle="rgba(255,220,150,0.12)";
+  for(let i=0;i<3;i++) ctx.fillRect(120+i*220,20,10,260);
+  ctx.font="italic 18px Georgia"; ctx.fillStyle="#e8dcbd"; ctx.textAlign="center";
+  ctx.fillText("\"Six noble hearts await your attention, my lord.\"", 400, 150);
+
+  const budgetLeft = Math.max(0, S.romanceCap - S.romanceUsed);
+  const panel = $("#romancePanel");
+  panel.innerHTML = `
+    <p><strong>Courtly Romance</strong> &mdash; choose whom to visit.
+    <span class="helptext" style="display:inline;">Conversations remaining this season: ${budgetLeft}</span></p>
+    <div class="npc-grid" id="npcGrid"></div>
+    <div class="btnrow" style="margin-top:12px;"><button class="btn steel" id="btnBack">${escapeHtml(returnLabel)}</button></div>
+  `;
+  const grid = $("#npcGrid");
+  NOBLES.forEach(n=>{
+    const card=document.createElement("div");
+    card.className="npc-card";
+    card.innerHTML = `<canvas width="70" height="70"></canvas>
+      <div class="npc-name">${escapeHtml(n.name)}</div>
+      <div class="npc-pastime">Loves ${PASTIMES[n.pastime]}</div>
+      <div class="meter" style="margin-top:6px;"><i style="width:${S.relations[n.id]}%"></i></div>
+      <div class="helptext">${S.relations[n.id]}% ${S.spouseId===n.id?" &middot; Wed":""}</div>`;
+    const c=card.querySelector("canvas"); const cx=c.getContext("2d");
+    drawFigure(cx,{x:35,y:40,scale:0.5,sex:n.sex,skin:n.skin,outfit:n.outfit,hair:n.hair,noble:true,beard:!!n.beard});
+    card.onclick=()=>openConversation(n);
+    grid.appendChild(card);
+  });
+  // NOTE: back button was already created in the initial innerHTML above, and NPC cards are
+  // appended as live DOM nodes (never re-stringified), so their onclick handlers and the
+  // portrait canvases both survive. Re-assigning panel.innerHTML after appendChild would wipe both.
+  $("#btnBack").onclick=()=>returnTo();
+}
+function openConversation(n){
+  if(!S.loverId) { S.loverId=n.id; } // courting sets current focus of the heart
+  const body = `
+    <p style="font-style:italic;">${n.flavor}</p>
+    <p>Relationship: <strong id="relValue">${S.relations[n.id]}%</strong></p>
+    <p class="helptext" id="budgetNote"></p>
+    <div id="convoChoices"></div>
+    <div id="convoResult" class="dialogue-box" style="display:none;"></div>
+    <div class="btnrow" style="margin-top:10px;" id="convoActions"></div>`;
+  const m = modal(n.name, body, [{label:"Take Your Leave", cls:"steel"}]);
+  function renderChoices(){
+    const budgetLeft = S.romanceCap - S.romanceUsed;
+    m.querySelector("#budgetNote").textContent = budgetLeft>0
+      ? `Conversations remaining this season: ${budgetLeft}`
+      : `You have spent all the time you can spare on courtly matters this season.`;
+    const choicesEl = m.querySelector("#convoChoices");
+    choicesEl.innerHTML = DIALOGUE_TOPICS.map(t=>{
+      const pairKey = n.id+"|"+t.key;
+      const alreadyUsed = S.romancePairsUsed.includes(pairKey);
+      const disabled = alreadyUsed || budgetLeft<=0;
+      const label = alreadyUsed ? t.label+" — already discussed this season" : t.label;
+      return `<button class="choice-btn" data-key="${t.key}" ${disabled?"disabled":""}>${label}</button>`;
+    }).join("");
+    choicesEl.querySelectorAll(".choice-btn").forEach(btn=>{
+      btn.onclick=()=>{
+        const key=btn.dataset.key;
+        const pairKey = n.id+"|"+key;
+        if(S.romanceUsed>=S.romanceCap || S.romancePairsUsed.includes(pairKey)) return;
+        const topic = DIALOGUE_TOPICS.find(t=>t.key===key);
+        let delta, line;
+        if(topic.pastime===n.pastime){ delta=randi(6,10); line=`Their eyes light up — you have found exactly the right subject. A resounding success.`; }
+        else if(topic.pastime==="bold"){ delta=randi(-2,8); line = delta>=0 ? `They flush, flattered — perhaps a little. That went rather well.` : `They find your boldness presumptuous. That did not land as hoped.`; }
+        else if(topic.pastime==="rude"){ delta=-randi(8,14); line=`They stiffen, visibly offended. A poor showing.`; }
+        else if(topic.pastime===null){ delta=randi(1,4); line=`Pleasant enough conversation, if unremarkable. A modest success.`; }
+        else { delta=randi(-3,3); line = delta>0 ? `They listen politely, though it isn't their passion — still, a small success.` : delta<0 ? `They listen politely, though it isn't their passion, and their attention wanders.` : `They listen politely, though it isn't their passion. No harm done, no ground gained.`; }
+        S.relations[n.id]=clamp(S.relations[n.id]+delta,0,100);
+        S.romanceUsed++;
+        S.romancePairsUsed.push(pairKey);
+        save();
+        const resultEl = m.querySelector("#convoResult");
+        resultEl.style.display="block";
+        resultEl.innerHTML = `<strong>${delta>0?"Success:":delta<0?"Misstep:":"No change:"}</strong> ${line} <span style="font-family:var(--font-data);">(${delta>=0?"+":""}${delta} relationship)</span>`;
+        const rv = m.querySelector("#relValue"); if(rv) rv.textContent = S.relations[n.id]+"%";
+        renderChoices();
+        refreshActions();
+      };
+    });
+  }
+  function refreshActions(){
+    const rel = S.relations[n.id];
+    const isSpouse = S.spouseId===n.id;
+    const canPropose = !S.married && rel>=70 && !isSpouse;
+    const canChild = S.married && isSpouse && rel>=90 && S.children.length<6;
+    const full = S.married && isSpouse && S.children.length>=6;
+    const row = m.querySelector("#convoActions");
+    row.innerHTML = `
+      ${canPropose?`<button class="btn seal" id="btnPropose">Propose Marriage</button>`:""}
+      ${canChild?`<button class="btn gold" id="btnChildBio">Have a Child (Bear Naturally)</button><button class="btn gold" id="btnChildAdopt">Have a Child (Adopt)</button>`:""}
+      ${full?`<span class="helptext">Your household is full of the pitter-patter of six little feet already.</span>`:""}
+    `;
+    if(canPropose) row.querySelector("#btnPropose").onclick=()=>{
+      S.married=true; S.spouseId=n.id; S.loverId=n.id;
+      save(); m.remove();
+      toast("A Betrothal!", `${n.name} accepts your proposal with joy. You are wed.`, 4500);
+    };
+    if(canChild){
+      const finish=(method)=>{
+        const gender = choice(["male","female"]);
+        S.children.push({name: choice(["Alys","Robin","Mabel","Wat","Cecily","Hob"]), gender, method, toy: choice(["sword","horse","doll","hoop"])});
+        S.morale=clamp(S.morale+3,0,100);
+        save(); m.remove();
+        toast("A New Arrival", method==="adopt" ? "A child is brought into your household and adopted as your own." : "Your household welcomes a newborn child.", 4500);
+      };
+      row.querySelector("#btnChildBio").onclick=()=>finish("birth");
+      row.querySelector("#btnChildAdopt").onclick=()=>finish("adopt");
+    }
+  }
+  renderChoices();
+  refreshActions();
+}
+
+/* ============================= FEAST ============================= */
+function screenFeast(){
+  const cost = Math.round(80+S.serfs*0.3);
+  if(cost>S.gold){
+    modal("Cannot Afford a Feast", `<p>A feast worthy of the nobility would cost ${cost}g, and your coffers hold only ${fmt(S.gold)}g.</p>`, [{label:"Return", cls:"steel"}]);
+    return;
+  }
+  S.gold-=cost;
+  S.romanceCap += 2; // a feast opens two further courtly conversations, usable here before the season ends
+  S.feastBaronsUsed = false; // a fresh chance to work the room, once, at this feast
+  save();
+  toast("The Feast Begins", `You lay out ${cost}g on the finest fare England can offer. Two further courtly conversations are open to you tonight.`, 4000);
+  renderFeastHall();
+}
+function drawRoastPlatter(ctx,x,y){
+  ctx.fillStyle="#9a9a9a"; ctx.beginPath(); ctx.ellipse(x,y,16,7,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#c8c8c8"; ctx.beginPath(); ctx.ellipse(x,y-1,14,6,0,0,Math.PI*2); ctx.fill();
+  const roastGrad=ctx.createLinearGradient(x-10,y-6,x+10,y);
+  roastGrad.addColorStop(0,"#8a4a22"); roastGrad.addColorStop(1,"#5c2c10");
+  ctx.fillStyle=roastGrad; ctx.beginPath(); ctx.ellipse(x-1,y-3,11,5.5,-0.1,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#3a1808"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(x-8,y-3); ctx.lineTo(x+6,y-4); ctx.moveTo(x-6,y-1); ctx.lineTo(x+7,y-2); ctx.stroke();
+  ctx.strokeStyle="#e8dcc0"; ctx.lineWidth=2; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(x+7,y-4); ctx.lineTo(x+13,y-9); ctx.stroke();
+  ctx.fillStyle="#3a5a2a";
+  [[-9,-6],[10,-7],[-2,-8]].forEach(([dx,dy])=>{ ctx.beginPath(); ctx.ellipse(x+dx,y+dy,3,1.6,0.3,0,Math.PI*2); ctx.fill(); });
+}
+function drawFruitBowl(ctx,x,y){
+  ctx.fillStyle="#5a3a1e"; ctx.beginPath(); ctx.ellipse(x,y+2,10,4.5,0,0,Math.PI); ctx.fill();
+  ctx.strokeStyle="#3a2410"; ctx.lineWidth=1; ctx.stroke();
+  const cols=["#8c1a1a","#5c7a2a","#c9a227","#7a1f2b"];
+  [[-5,-2],[2,-3],[6,-1],[-1,-4],[4,-4]].forEach(([dx,dy],i)=>{
+    const g=ctx.createRadialGradient(x+dx-1,y+dy-1,0.5,x+dx,y+dy,3);
+    g.addColorStop(0, shade(cols[i%cols.length],0.35)); g.addColorStop(1, cols[i%cols.length]);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x+dx,y+dy,2.7,0,Math.PI*2); ctx.fill();
+  });
+}
+function drawPasties(ctx,x,y){
+  ctx.fillStyle="#9a9a9a"; ctx.beginPath(); ctx.ellipse(x,y+2,13,5,0,0,Math.PI*2); ctx.fill();
+  [-6,5].forEach(dx=>{
+    const g=ctx.createLinearGradient(x+dx,y-4,x+dx,y+1);
+    g.addColorStop(0,"#d9a227"); g.addColorStop(1,"#a2691a");
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(x+dx,y,4.6,Math.PI,0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#7a4a12"; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let k=-4;k<=4;k+=2.2){ ctx.moveTo(x+dx+k,y); ctx.lineTo(x+dx+k+1.1,y-1.6); }
+    ctx.stroke();
+  });
+}
+function drawGoblet(ctx,x,y,flick){
+  ctx.fillStyle="#c9a227"; ctx.fillRect(x-3.5,y-8,7,7);
+  ctx.fillStyle="#8c1a1a"; ctx.beginPath(); ctx.ellipse(x,y-8,3.5,1.4,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#8a6a1a"; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(x,y-1); ctx.lineTo(x,y+2); ctx.stroke();
+}
+function drawLionCharge(ctx,cx,cy,s,color){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.ellipse(-2,10,9,14,0.15,0,Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  for(let a=0;a<12;a++){ const ang=a/12*Math.PI*2; const r=a%2===0?11:7;
+    const px=Math.cos(ang)*r, py=-14+Math.sin(ang)*r*0.9;
+    if(a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(0,-14,6,0,Math.PI*2); ctx.fill();
+  ctx.lineWidth=4; ctx.strokeStyle=color; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-4,0); ctx.lineTo(-12,-8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2,-2); ctx.lineTo(9,-10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-6,20); ctx.lineTo(-10,28); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2,22); ctx.lineTo(6,29); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6,14); ctx.quadraticCurveTo(18,10,16,-2); ctx.stroke();
+  ctx.restore();
+}
+function drawEagleCharge(ctx,cx,cy,s,color){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.ellipse(0,4,5,12,0,0,Math.PI*2); ctx.fill();
+  [-1,1].forEach(dir=>{
+    ctx.beginPath();
+    ctx.moveTo(dir*3,-2);
+    ctx.quadraticCurveTo(dir*22,-14,dir*26,-4);
+    ctx.quadraticCurveTo(dir*16,-2,dir*20,6);
+    ctx.quadraticCurveTo(dir*10,4,dir*4,10);
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.beginPath(); ctx.arc(0,-10,5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(-1,-6); ctx.lineTo(3,-8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-4,16); ctx.lineTo(4,16); ctx.lineTo(0,24); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawUnicornCharge(ctx,cx,cy,s,color){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=4; ctx.lineCap="round";
+  ctx.beginPath(); ctx.ellipse(0,8,8,13,0.1,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(2,-8,5,9,-0.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(4,-16); ctx.lineTo(9,-28); ctx.lineTo(6,-15); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-3,2); ctx.lineTo(-10,-8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3,0); ctx.lineTo(8,-10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-5,20); ctx.lineTo(-9,29); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3,21); ctx.lineTo(6,29); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-8,10); ctx.quadraticCurveTo(-16,16,-13,26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4,-16); ctx.quadraticCurveTo(0,-10,3,-2); ctx.stroke();
+  ctx.restore();
+}
+function drawWalrusCharge(ctx,cx,cy,s,color){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.ellipse(2,4,15,10,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-13,-2,8,8,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(10,13,7,4,0.4,0,Math.PI*2); ctx.fill();
+  // eye, to anchor the head as a head
+  ctx.fillStyle="#3a2a10"; ctx.beginPath(); ctx.arc(-15,-4,1.5,0,Math.PI*2); ctx.fill();
+  // bold tusks, hanging well clear of the body silhouette so they read at a glance
+  ctx.strokeStyle=color; ctx.lineWidth=4.5; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-17,2); ctx.quadraticCurveTo(-20,14,-14,18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-10,2); ctx.quadraticCurveTo(-13,14,-7,18); ctx.stroke();
+  ctx.restore();
+}
+function drawFeastHallScene(ctx,w,h,t){
+  t=t||0;
+  bgFill(ctx,w,h,"#5a4028","#160f0a");
+  drawStoneWall(ctx,w,h*0.4,0,h*0.08,"#4a3626");
+  ctx.fillStyle="#1c130c";
+  for(let i=0;i<5;i++) ctx.fillRect(w*0.02+i*w*0.2, 0, 12, h*0.05);
+  // heraldic banners along the back wall, each bearing its own charge
+  [0.05,0.25,0.62,0.82].forEach((fx,i)=>{
+    const bc=["#7c1f2b","#3f4f37","#4b5560","#5c3a8c"][i];
+    ctx.fillStyle="#1c130c"; ctx.fillRect(w*fx-3,h*0.03,w*0.11+6,5);
+    ctx.fillStyle=bc; ctx.fillRect(w*fx,h*0.05,w*0.11,h*0.23);
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2; ctx.strokeRect(w*fx+6,h*0.07,w*0.11-12,h*0.23-14);
+    const charge=[drawLionCharge,drawEagleCharge,drawUnicornCharge,drawWalrusCharge][i];
+    charge(ctx, w*fx+w*0.055, h*0.05+h*0.125, (w*0.11)/62, "#e8dcc0");
+  });
+  drawTorch(ctx,w*0.02,h*0.2,t);
+  drawTorch(ctx,w*0.98,h*0.2,t);
+  // a flagstone floor with real depth, so there's open room between the wall and the table
+  ctx.fillStyle="#2a2018"; ctx.fillRect(0,h*0.4,w,h*0.6);
+  ctx.strokeStyle="rgba(0,0,0,0.28)"; ctx.lineWidth=1;
+  for(let x=-30;x<w+30;x+=40){ ctx.beginPath(); ctx.moveTo(x,h*0.4); ctx.lineTo(x-30,h); ctx.stroke(); }
+  for(let yy=h*0.46;yy<h;yy+=17){ ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(w,yy); ctx.stroke(); }
+
+  // everyone shares one long table — the baron, their spouse (if wed), and the courtly nobles,
+  // seated (not standing) on the far side of it, sized generously now there's real room for them
+  const tableTop=h*0.6, tableLeft=w*0.08, tableRight=w*0.92;
+  const dinerScale = 0.8;
+  const dinerY = tableTop - 26*dinerScale;
+  let spouse = (S.married && S.spouseId) ? NOBLES.find(n=>n.id===S.spouseId) : null;
+  const diners = [{isPlayer:true, sex:S.player.sex, skin:S.player.skin, outfit:S.player.outfit, hair:S.player.hair}];
+  if(spouse) diners.push({isSpouse:true, sex:spouse.sex, skin:spouse.skin, outfit:spouse.outfit, hair:spouse.hair, beard:!!spouse.beard});
+  NOBLES.forEach(n=>{ if(!(spouse && n.id===spouse.id)) diners.push({sex:n.sex, skin:n.skin, outfit:n.outfit, hair:n.hair, beard:!!n.beard}); });
+  const dinerXs = diners.map((d,i)=> w*0.16 + i*((w*0.68)/(diners.length-1)) );
+  diners.forEach((d,i)=>{
+    drawFigure(ctx,{x:dinerXs[i],y:dinerY,scale:dinerScale,sex:d.sex,skin:d.skin,outfit:d.outfit,hair:d.hair,noble:true,beard:!!d.beard});
+  });
+
+  // the table itself: a long dining table on slender open legs, just like the one King John sits
+  // at — not a solid box. Everyone's legs stay visible, reaching all the way to the ground.
+  const groundY = tableTop + 42*dinerScale;
+  ctx.fillStyle="rgba(0,0,0,0.25)"; ctx.beginPath(); ctx.ellipse((tableLeft+tableRight)/2,groundY+7,(tableRight-tableLeft)/2+8,9,0,0,Math.PI*2); ctx.fill();
+  const legXs=[tableLeft+16, tableLeft+(tableRight-tableLeft)/3, tableLeft+(tableRight-tableLeft)*2/3, tableRight-16];
+  ctx.fillStyle="#241811";
+  legXs.forEach(lx=>{ ctx.fillRect(lx-4,tableTop+2,8,groundY-(tableTop+2)); });
+  ctx.fillStyle="#5a3f28"; ctx.fillRect(tableLeft-8,tableTop-9,tableRight-tableLeft+16,11);
+  ctx.strokeStyle="#241811"; ctx.lineWidth=1.5; ctx.strokeRect(tableLeft-8,tableTop-9,tableRight-tableLeft+16,11);
+
+  // a beautiful spread down the table's length: roast venison, fruit, pasties, candles and wine
+  const spread=["candle","pasties","fruit","roast","fruit","pasties","candle","goblet"];
+  spread.forEach((kind,i)=>{
+    const px = tableLeft + 26 + i*((tableRight-tableLeft-52)/(spread.length-1));
+    const py = tableTop-6;
+    if(kind==="roast") drawRoastPlatter(ctx,px,py);
+    else if(kind==="fruit") drawFruitBowl(ctx,px,py);
+    else if(kind==="pasties") drawPasties(ctx,px,py);
+    else if(kind==="goblet") drawGoblet(ctx,px,py,1);
+    else {
+      const flick=1+Math.sin(t*8+i)*0.15;
+      ctx.fillStyle="#e4d8b4"; ctx.beginPath(); ctx.ellipse(px,py+4,7,3,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#ffb15c"; ctx.beginPath(); ctx.ellipse(px,py-10,2*flick,6*flick,0,0,Math.PI*2); ctx.fill();
+      const g=ctx.createRadialGradient(px,py-8,2,px,py-8,20*flick);
+      g.addColorStop(0,"rgba(255,180,90,0.3)"); g.addColorStop(1,"rgba(255,180,90,0)");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px,py-8,20*flick,0,Math.PI*2); ctx.fill();
+    }
+  });
+
+  // spouse's heart marker, once the table (and everything on it) is safely in place
+  if(spouse){
+    const si = diners.findIndex(d=>d.isSpouse);
+    ctx.fillStyle="#a4303f"; ctx.font="bold 16px Georgia"; ctx.textAlign="center";
+    ctx.fillText("♥", dinerXs[si], dinerY - 42*dinerScale);
+  }
+
+  ctx.font="italic 15px Georgia"; ctx.fillStyle="#f0e2c0"; ctx.textAlign="center";
+  ctx.fillText("A feast in the Great Hall — the finest lords and ladies of England are present.", w/2, 20);
+}
+function renderFeastHall(){
+  stopActiveAnim();
+  stage.innerHTML = layout(800,450,`<div id="feastPanel"></div>`);
+  const ctx=getCanvas().getContext("2d");
+  drawFeastHallScene(ctx,800,450,performance.now()/1000);
+
+  const panel=$("#feastPanel");
+  panel.innerHTML = `<p><strong>The Great Hall</strong> &mdash; mingle while the wine flows.</p>
+    <div class="btnrow">
+      <button class="btn" id="btnMeet">Meet the Romantic Guests</button>
+      <button class="btn seal" id="btnBarons" ${S.feastBaronsUsed?"disabled":""}>${S.feastBaronsUsed?"Already Spoken With the Barons":"Speak with the Other Barons"}</button>
+      <button class="btn steel" id="btnLeave">Leave the Feast</button>
+    </div>
+    <div id="feastResult" class="helptext" style="margin-top:8px;">${S.feastBaronsUsed?"One good conversation is worth more than badgering the room — you have made your case to the barons for this feast.":""}</div>`;
+  $("#btnMeet").onclick=()=>screenRomance(renderFeastHall,"Return to the Feast");
+  $("#btnBarons").onclick=()=>{
+    if(S.feastBaronsUsed) return;
+    const delta=randi(4,9);
+    S.baronRelation=clamp(S.baronRelation+delta,0,100);
+    S.feastBaronsUsed=true;
+    save();
+    $("#btnBarons").disabled=true; $("#btnBarons").textContent="Already Spoken With the Barons";
+    let extra = "";
+    const warEligible = (S.baronRelation>=70 && S.kingRelation<=30) || S.kingRelation<=25;
+    if(warEligible && !S.warUnlocked){
+      extra = `<div class="btnrow" style="margin-top:10px;"><button class="btn seal" id="btnStartWar">Speak of Rebellion &mdash; Initiate the Barons' War</button></div>`;
+    }
+    $("#feastResult").innerHTML = `The barons receive you warmly, grumbling about the King's demands. (+${delta} baron relations, now ${S.baronRelation}%)${extra}`;
+    if(extra){
+      $("#btnStartWar").onclick=()=>{
+        S.warUnlocked=true; S.kingRelation=clamp(S.kingRelation-15,0,100);
+        save();
+        modal("The Barons' War Begins", `<p>Cups are raised in a grim toast. The barons of England pledge their swords against King John. A marshal now awaits you in the keep.</p>`, [{label:"So Be It", cls:"seal"}]);
+        $("#feastResult").insertAdjacentHTML("beforeend", "<p><strong>The die is cast.</strong></p>");
+      };
+    }
+  };
+  $("#btnLeave").onclick=()=>endSeason("The feast concludes, and the hall grows quiet once more.");
+}
+
+/* ============================= COMBAT ENGINE ============================= */
+/* Shared Stardew-like timing combat: enemy telegraphs (windup) then swings; player presses
+   BLOCK during windup->swing to avoid damage, or ATTACK during enemy's post-swing "opening" to land a hit. */
+let combatState = null;
+function startCombat(kind){
+  stopActiveAnim();
+  let cfg;
+  if(kind==="tournament"){
+    cfg = {kind, title:"The Tourney Grounds", enemyName:"A Rival Knight", enemyHpMax:3, totalEnemies:1,
+      bg:["#5a7a4a","#1a2a12"], weapon:"sword", enemyWeapon:"sword",
+      windupRange:[0.55,0.95], openingRange:[0.55,0.9], restRange:[0.6,1.0], ambushChance:0.12,
+      onWin:()=>{ S.combat=clamp(S.combat+randi(4,8),0,100); toast("Victory in the Lists!","Your combat prowess improves.",4000); },
+      onLose:()=>{ const cost=randi(5,15); S.gold=Math.max(0,S.gold-cost); toast("Unhorsed","You yield the match. A small fee settles the bout ("+cost+"g).",4000); }
+    };
+  } else if(kind==="brigands"){
+    cfg = {kind, title:"The Forest Road", enemyName:"Brigand", enemyHpMax:1, totalEnemies:10,
+      bg:["#3a4a2a","#0d140a"], weapon:"sword", enemyWeapon:"club", background:true,
+      windupRange:[0.28,0.55], openingRange:[0.5,0.8], restRange:[0.3,0.55], ambushChance:0.32,
+      bgInterval:1.7, bgBaseChance:0.14, bgKnightBonus:0.008,
+      onWin:(killed)=>{ const delta=Math.round((killed/10)*18); S.baronRelation=clamp(S.baronRelation+delta,0,100);
+        const moraleUp=Math.round((killed/10)*6); S.morale=clamp(S.morale+moraleUp,0,100);
+        toast("The Road Is Cleared","Other barons hear of your deeds (+"+delta+" baron relations), and the serfs sleep easier with the road safe again (+"+moraleUp+" morale).",4600); },
+      onLose:(killed)=>{ const cost=randi(20,40); S.gold=Math.max(0,S.gold-cost); const delta=Math.round((killed/10)*8); S.baronRelation=clamp(S.baronRelation+delta,0,100);
+        toast("Taken for Ransom","The brigands overwhelm you and hold you for ransom ("+cost+"g).",4200); }
+    };
+  } else if(kind==="war"){
+    cfg = {kind, title:"The King's Field", enemyName:"King's Knight", enemyHpMax:2, totalEnemies:20,
+      bg:["#5a5a5a","#1a1a1a"], weapon:"sword", enemyWeapon:"sword", background:true, royal:true,
+      windupRange:[0.5,0.85], openingRange:[0.42,0.68], restRange:[0.55,0.9], ambushChance:0.14,
+      bgInterval:1.7, bgBaseChance:0.16, bgKnightBonus:0.012,
+      onWin:(killed)=>{ const pct=killed*2; S.kingArmy=clamp(S.kingArmy-pct,0,100); toast("The Field Is Yours","The King's army is worn down by "+pct+"%.",4200);
+        if(S.kingArmy<=0){ S.warWon=true; S.gameEnded=true; }
+      },
+      onLose:(killed)=>{ const pct=killed*2; S.kingArmy=clamp(S.kingArmy-pct,0,100);
+        const cost=randi(30,60); S.gold=Math.max(0,S.gold-cost);
+        const lostKnights=Math.min(S.knights, randi(1,3));
+        S.knights=Math.max(0,S.knights-lostKnights);
+        toast("Overwhelmed","You are ransomed back to your castle ("+cost+"g), having lost "+lostKnights+" knight(s) in the field.",4600);
+        if(S.kingArmy<=0){ S.warWon=true; S.gameEnded=true; }
+      }
+    };
+  }
+  combatState = {
+    cfg, playerHp:5, playerHpMax:5, enemiesDefeated:0,
+    phase:"idle", // idle, windup, opening, cooldown
+    timer:0, nextEventAt:rand(0.7,1.4), ambushed:false,
+    curEnemyHp:cfg.enemyHpMax, playerPose:"idle", enemyPose:"idle",
+    bgKills:0, bgTimer:0, running:true, message:"Approach and ready your weapon.",
+    lastResult:null
+  };
+  save();
+  Audio1.setMode("battle");
+  renderCombatScreen();
+  requestAnimationFrame(combatLoop);
+}
+let combatKeyHandler = null;
+function flashKey(id){
+  const el=$("#"+id); if(!el) return;
+  el.classList.add("keyflash");
+  setTimeout(()=>el.classList.remove("keyflash"),120);
+}
+function renderCombatScreen(){
+  const c=combatState.cfg;
+  stage.innerHTML = layout(800,450, `
+    <p><strong>${c.title}</strong> &mdash; ${c.kind==="tournament"?"A friendly tourney bout.":c.kind==="brigands"?"Defend the road from brigands.":"The King's knights bar your way."}</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div>Your Health: <span class="hp-dots" id="hpDots"></span></div>
+      <div class="helptext">${c.background?("Defeated: <strong id=\"killCount\">0</strong> / "+c.totalEnemies):("Enemy Health: <strong id=\"enemyHp\">"+combatState.curEnemyHp+"</strong>")}</div>
+    </div>
+    <p id="combatMsg">${combatState.message}</p>
+    <div class="btnrow">
+      <button class="btn seal" id="btnAttack">Attack <kbd>A</kbd></button>
+      <button class="btn steel" id="btnBlock">Block / Dodge <kbd>S</kbd></button>
+      <button class="btn" id="btnFlee">Flee the Field <kbd>Esc</kbd></button>
+    </div>
+    <p class="helptext">Attack when your foe is staggered after their swing (green). Block the instant their blow is about to land (red). Keyboard: A to attack, S to block, Esc to flee.</p>
+  `);
+  updateHpDots();
+  $("#btnAttack").onclick=()=>combatAction("attack");
+  $("#btnBlock").onclick=()=>combatAction("block");
+  $("#btnFlee").onclick=()=>endCombat(false, "fled");
+  if(combatKeyHandler) document.removeEventListener("keydown", combatKeyHandler);
+  combatKeyHandler = (e)=>{
+    if(!combatState || !combatState.running) return;
+    if(e.repeat) return;
+    if(e.key==="a"||e.key==="A"){ e.preventDefault(); combatAction("attack"); flashKey("btnAttack"); }
+    else if(e.key==="s"||e.key==="S"){ e.preventDefault(); combatAction("block"); flashKey("btnBlock"); }
+    else if(e.key==="Escape"){ e.preventDefault(); endCombat(false,"fled"); }
+  };
+  document.addEventListener("keydown", combatKeyHandler);
+}
+function updateHpDots(){
+  const el=$("#hpDots"); if(!el) return;
+  el.innerHTML="";
+  for(let i=0;i<combatState.playerHpMax;i++){
+    const dot=document.createElement("i");
+    if(i>=combatState.playerHp) dot.className="lost";
+    el.appendChild(dot);
+  }
+}
+function combatAction(action){
+  const cs=combatState; if(!cs.running) return;
+  const c=cs.cfg;
+  if(action==="attack"){
+    if(cs.phase==="opening"){
+      cs.curEnemyHp -= 1;
+      cs.enemyPose="stagger";
+      cs.message = cs.ambushed ? "You seize the opening and strike first!" : "A clean hit lands!";
+      cs.ambushed=false;
+      if(cs.curEnemyHp<=0){
+        enemyDefeated();
+        if(!cs.running) return;
+      }
+      cs.phase="cooldown"; cs.timer=0; cs.nextEventAt=rand(c.restRange[0],c.restRange[1]);
+    } else {
+      // A miss doesn't interrupt the foe's own timing — their windup/swing keeps to schedule.
+      cs.message="You swing wide — your foe wasn't open.";
+    }
+  } else if(action==="block"){
+    if(cs.phase==="windup"){
+      cs.message="You raise your guard just in time!";
+      cs.playerPose="block";
+      cs.phase="cooldown"; cs.timer=0; cs.nextEventAt=rand(c.restRange[0],c.restRange[1]);
+    } else {
+      cs.message="You guard, but no blow was coming.";
+    }
+  }
+  if($("#combatMsg")) $("#combatMsg").textContent = cs.message;
+}
+function enemyDefeated(){
+  const cs=combatState;
+  cs.enemiesDefeated++;
+  if(cs.cfg.background) cs.bgKills++;
+  if(!cs.cfg.background){
+    endCombat(true);
+    return;
+  }
+  const total = cs.bgKills;
+  if($("#killCount")) $("#killCount").textContent = total;
+  if(total>=cs.cfg.totalEnemies){ endCombat(true); return; }
+  cs.curEnemyHp = cs.cfg.enemyHpMax;
+  if($("#enemyHp")) $("#enemyHp").textContent = cs.curEnemyHp;
+}
+function playerHit(){
+  const cs=combatState;
+  cs.playerHp -= 1;
+  cs.playerPose="stagger";
+  updateHpDots();
+  cs.message="You take a blow!";
+  if($("#combatMsg")) $("#combatMsg").textContent = cs.message;
+  if(cs.playerHp<=0){ endCombat(false); }
+}
+function combatLoop(ts){
+  const cs=combatState;
+  if(!cs.running) return;
+  if(!cs.lastTs) cs.lastTs=ts;
+  const dt=(ts-cs.lastTs)/1000; cs.lastTs=ts;
+  cs.timer+=dt;
+
+  const c=cs.cfg;
+  if(c.background){
+    cs.bgTimer+=dt;
+    if(cs.bgTimer>c.bgInterval){
+      cs.bgTimer=0;
+      // background skirmish: your knights vs the enemy resolves passively, in parallel to your own fight
+      if(Math.random() < c.bgBaseChance + S.knights*c.bgKnightBonus){
+        cs.bgKills++;
+        const total=cs.bgKills;
+        if($("#killCount")) $("#killCount").textContent = total;
+        if(total>=c.totalEnemies){ endCombat(true); return; }
+      }
+    }
+  }
+
+  if(cs.timer>=cs.nextEventAt){
+    cs.timer=0;
+    // trained combat skill pays off in every fight: a better eye for an opening, and a better
+    // chance of catching a foe flat-footed in the first place
+    const skill = clamp(S.combat,0,100)/100;
+    if(cs.phase==="idle"){
+      if(Math.random() < c.ambushChance + skill*0.15){
+        // the foe is caught flat-footed — an early opening, no red telegraph, reward quick reflexes
+        cs.phase="opening"; cs.enemyPose="idle"; cs.ambushed=true;
+        cs.nextEventAt=rand(c.openingRange[0],c.openingRange[1]+skill*0.25);
+        cs.message="Your foe is caught off guard — strike now!";
+      } else {
+        cs.phase="windup"; cs.enemyPose="windup"; cs.ambushed=false;
+        cs.nextEventAt=rand(c.windupRange[0],c.windupRange[1]);
+        cs.message = "Your foe winds up a blow!";
+      }
+    } else if(cs.phase==="windup"){
+      // player failed to block in time
+      cs.phase="opening"; cs.enemyPose="idle"; cs.ambushed=false;
+      playerHit();
+      if(!cs.running) return;
+      cs.nextEventAt=rand(c.openingRange[0],c.openingRange[1]+skill*0.25);
+    } else if(cs.phase==="opening"){
+      cs.phase="idle"; cs.enemyPose="idle"; cs.playerPose="idle"; cs.ambushed=false;
+      cs.nextEventAt=rand(c.restRange[0],c.restRange[1]);
+      cs.message="Your foe recovers their footing.";
+    } else if(cs.phase==="cooldown"){
+      cs.phase="idle"; cs.enemyPose="idle"; cs.playerPose="idle";
+      cs.nextEventAt=rand(c.restRange[0],c.restRange[1]);
+    }
+    if($("#combatMsg") && cs.running) $("#combatMsg").textContent = cs.message;
+  }
+
+  drawCombatFrame();
+  requestAnimationFrame(combatLoop);
+}
+// A fluttering pennant: the tip bobs and the trailing edge ripples on independent sine waves,
+// so a whole row of them never quite moves in unison — reads as wind, not just wobble.
+function drawPennant(ctx,x,y,len,color,t,seed){
+  seed = seed||0;
+  const tip = Math.sin(t*3.2+seed)*4 + Math.sin(t*5.7+seed*1.6)*2;
+  const belly = Math.sin(t*3.2+seed+0.6)*2.5;
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(x,y-6);
+  ctx.quadraticCurveTo(x+len*0.55,y-5+belly*0.5,x+len,y+tip);
+  ctx.quadraticCurveTo(x+len*0.55,y+5+belly,x,y+6);
+  ctx.closePath();
+  ctx.fill();
+}
+function drawTent(ctx,x,y,color,t){
+  t = t||0;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.moveTo(x-40,y+50); ctx.lineTo(x,y-10); ctx.lineTo(x+40,y+50); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=shade(color,-0.35);
+  ctx.beginPath(); ctx.moveTo(x-10,y+50); ctx.lineTo(x,y+10); ctx.lineTo(x+10,y+50); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x,y-10); ctx.lineTo(x-40,y+50); ctx.moveTo(x,y-10); ctx.lineTo(x+40,y+50); ctx.stroke();
+  ctx.save(); ctx.translate(x,y-16); ctx.rotate(-Math.PI/2);
+  drawPennant(ctx,0,0,13,"#d9ad4d",t,x*0.3);
+  ctx.restore();
+}
+function drawTourneyBg(ctx,w,h,t){
+  t = t||0;
+  // sky only at the very top; one continuous grassy ground below the tree line, so nothing
+  // standing on it — tents included — appears to float
+  const skyG=ctx.createLinearGradient(0,0,0,h*0.2);
+  skyG.addColorStop(0,"#bfe0d8"); skyG.addColorStop(1,"#d8ecc0");
+  ctx.fillStyle=skyG; ctx.fillRect(0,0,w,h*0.2);
+  ctx.fillStyle="#2f4a24";
+  for(let i=0;i<11;i++){ ctx.beginPath(); ctx.arc(i*w/10, h*0.19, 16, 0, Math.PI*2); ctx.fill(); }
+  const grassG=ctx.createLinearGradient(0,h*0.18,0,h);
+  grassG.addColorStop(0,"#7a9a52"); grassG.addColorStop(1,"#5a8a3f");
+  ctx.fillStyle=grassG; ctx.fillRect(0,h*0.18,w,h*0.82);
+  ctx.strokeStyle="rgba(0,0,0,0.06)";
+  for(let y=h*0.24;y<h;y+=11){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  // pavilion tents, standing squarely on the grass
+  drawTent(ctx, w*0.1, h*0.28, "#7c1f2b", t);
+  drawTent(ctx, w*0.9, h*0.28, "#3a5a8c", t);
+  // a crowd of onlookers filling the stands behind the tilt-yard fence, clear of the tents on either side
+  const crowdColors=["#7c1f2b","#3a5a8c","#3f4f37","#5c3a8c","#b8892b","#4b5560","#8a4a22"];
+  const crowdSkins=["#e8c39a","#c98f5c","#d9a86c","#a86c3c"];
+  for(let i=0;i<16;i++){
+    const cx=w*0.2+i*(w*0.6/15), cy=h*0.29+Math.sin(i*1.7)*3;
+    ctx.fillStyle="rgba(20,15,10,0.5)"; ctx.beginPath(); ctx.ellipse(cx,cy+9,4,2.4,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=crowdColors[i%crowdColors.length];
+    ctx.beginPath(); ctx.moveTo(cx-4,cy+9); ctx.lineTo(cx+4,cy+9); ctx.lineTo(cx+3,cy); ctx.lineTo(cx-3,cy); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=crowdSkins[i%crowdSkins.length]; ctx.beginPath(); ctx.arc(cx,cy-3,3.2,0,Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle="#5a4028";
+  for(let x=w*0.16;x<w*0.85;x+=26){ ctx.fillRect(x,h*0.46,4,h*0.1); }
+  ctx.fillRect(w*0.16,h*0.47,w*0.68,4);
+  [0.22,0.4,0.58,0.76].forEach((fx,i)=>{
+    const col=["#7c1f2b","#3a5a8c","#3f4f37","#5c3a8c"][i];
+    ctx.strokeStyle="#3a2818"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(w*fx,h*0.37); ctx.lineTo(w*fx,h*0.47); ctx.stroke();
+    drawPennant(ctx, w*fx, h*0.4, 20, col, t, i*1.9);
+  });
+  ctx.fillStyle="rgba(0,0,0,0.2)"; ctx.fillRect(0,h*0.75,w,h*0.25);
+}
+function drawForestBg(ctx,w,h){
+  bgFill(ctx,w,h,"#6f8f52","#0d140a");
+  ctx.fillStyle="#5a4a30";
+  ctx.beginPath(); ctx.moveTo(w*0.38,h*0.42); ctx.lineTo(w*0.62,h*0.42); ctx.lineTo(w*0.92,h); ctx.lineTo(w*0.08,h); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle="rgba(0,0,0,0.15)";
+  for(let i=0;i<6;i++){ const t=i/6; const y=h*0.42+(h-h*0.42)*t; const xw=(w*0.24)+(w*0.76)*t;
+    ctx.beginPath(); ctx.moveTo(w*0.5-xw/2,y); ctx.lineTo(w*0.5+xw/2,y); ctx.stroke(); }
+  function treeRow(baseY,scl,colorDark){
+    ctx.fillStyle=colorDark;
+    for(let x=-20;x<w+20;x+=44*scl){
+      const tx = x + Math.sin(x)*6;
+      ctx.beginPath(); ctx.moveTo(tx,baseY+40*scl); ctx.lineTo(tx-22*scl,baseY+40*scl); ctx.lineTo(tx,baseY-30*scl); ctx.lineTo(tx+22*scl,baseY+40*scl); ctx.closePath(); ctx.fill();
+      ctx.fillRect(tx-3*scl,baseY+38*scl,6*scl,14*scl);
+    }
+  }
+  treeRow(h*0.32, 0.7, "#182611");
+  treeRow(h*0.4, 1.0, "#243318");
+  ctx.fillStyle="#223016";
+  for(let i=0;i<14;i++){ ctx.beginPath(); ctx.arc((i*137)%w, h*0.6+((i*89)%(h*0.35)), 6+((i*31)%10), 0, Math.PI*2); ctx.fill(); }
+  ctx.fillStyle="rgba(0,0,0,0.25)"; ctx.fillRect(0,h*0.75,w,h*0.25);
+}
+function drawHorse(ctx,x,y,scale,color,facing){
+  facing = facing||1;
+  ctx.save(); ctx.translate(x,y); ctx.scale(scale*facing,scale);
+  ctx.fillStyle="rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.ellipse(0,44,30,8,0,0,Math.PI*2); ctx.fill();
+  const dark=shade(color,-0.4);
+  ctx.strokeStyle=dark; ctx.lineWidth=6; ctx.lineCap="round";
+  [[-16,8,-19,38],[-4,10,-7,40],[7,10,9,40],[18,8,22,38]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  const bodyGrad=ctx.createRadialGradient(-6,-8,4,0,0,32);
+  bodyGrad.addColorStop(0, shade(color,0.28)); bodyGrad.addColorStop(0.55, color); bodyGrad.addColorStop(1, shade(color,-0.35));
+  ctx.fillStyle=bodyGrad;
+  ctx.beginPath(); ctx.ellipse(0,0,27,16,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(18,-8); ctx.quadraticCurveTo(34,-22,29,-34); ctx.quadraticCurveTo(20,-26,15,-8); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=dark;
+  ctx.beginPath(); ctx.moveTo(20,-10); ctx.quadraticCurveTo(28,-18,25,-32); ctx.lineTo(21,-30); ctx.quadraticCurveTo(21,-16,15,-8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-25,-6); ctx.quadraticCurveTo(-40,6,-30,30); ctx.quadraticCurveTo(-25,10,-19,-2); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawMountedKnight(ctx,opt){
+  const {x,y,scale=1,skin="#c98f5c",outfit="#4b5560",hair="#1a1208",facing=1,horseColor="#6b4a30",weapon="sword",crown=false}=opt;
+  drawHorse(ctx,x,y,scale,horseColor,facing);
+  ctx.save(); ctx.translate(x,y-24*scale); ctx.scale(scale*facing,scale);
+  ctx.fillStyle=shade(outfit,-0.25); ctx.fillRect(-13,-4,26,8);
+  const torsoGrad=ctx.createLinearGradient(-9,-8,11,14);
+  torsoGrad.addColorStop(0, shade(outfit,0.2)); torsoGrad.addColorStop(0.5, outfit); torsoGrad.addColorStop(1, shade(outfit,-0.3));
+  ctx.fillStyle=torsoGrad;
+  ctx.beginPath(); ctx.moveTo(-9,-8); ctx.lineTo(9,-8); ctx.lineTo(11,14); ctx.lineTo(-11,14); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=skin; ctx.lineWidth=5; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-8,-4); ctx.lineTo(-10,10); ctx.stroke();
+  if(weapon==="lance"){
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(-10,10); ctx.lineTo(26,-30); ctx.stroke();
+    ctx.strokeStyle="#c8cdd2"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(24,-27); ctx.lineTo(30,-33); ctx.stroke();
+  } else {
+    // tapered, pointed blade with a metallic gradient, matching the sword carried on foot
+    ctx.save();
+    ctx.translate(-10,10);
+    ctx.rotate(Math.atan2(-24,-4));
+    const mkBladeGrad=ctx.createLinearGradient(-2,0,2,0);
+    mkBladeGrad.addColorStop(0,"#8b939a"); mkBladeGrad.addColorStop(0.5,"#eef2f5"); mkBladeGrad.addColorStop(1,"#7d858c");
+    ctx.fillStyle=mkBladeGrad;
+    ctx.beginPath(); ctx.moveTo(-2,0); ctx.lineTo(2,0); ctx.lineTo(1.2,20); ctx.lineTo(0,25); ctx.lineTo(-1.2,20); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#8a6a2a"; ctx.lineWidth=2.6; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-5,1); ctx.lineTo(5,1); ctx.stroke();
+    ctx.restore();
+  }
+  const mkHeadGrad=ctx.createRadialGradient(-2.5,-18.5,1,0,-16,9);
+  mkHeadGrad.addColorStop(0, shade(skin,0.3)); mkHeadGrad.addColorStop(0.6, skin); mkHeadGrad.addColorStop(1, shade(skin,-0.2));
+  ctx.fillStyle=mkHeadGrad; ctx.beginPath(); ctx.arc(0,-16,8.5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#241a12";
+  ctx.beginPath(); ctx.arc(-2.6,-16.5,1,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(2.6,-16.5,1,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=hair; ctx.beginPath(); ctx.arc(0,-19.5,8.8,Math.PI*1.05,Math.PI*1.95); ctx.fill();
+  if(crown){
+    ctx.fillStyle="#d9ad4d";
+    [-6,0,6].forEach(px=>{ ctx.beginPath(); ctx.moveTo(px-2.5,-24); ctx.lineTo(px,-32); ctx.lineTo(px+2.5,-24); ctx.closePath(); ctx.fill(); });
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,-23,8.5,Math.PI*1.1,Math.PI*1.9); ctx.stroke();
+    ctx.fillStyle="#a4303f"; ctx.beginPath(); ctx.arc(0,-33,1.8,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawCastle(ctx,cx,baseY,scale,color,t){
+  t = t||0;
+  ctx.save(); ctx.translate(cx,baseY); ctx.scale(scale,scale);
+  ctx.fillStyle=color;
+  // curtain wall / main keep body, crenellated
+  ctx.fillRect(-42,-70,84,70);
+  for(let i=-40;i<40;i+=13){ ctx.fillRect(i,-78,9,10); }
+  // corner towers with conical roofs
+  [-52,52].forEach(tx=>{
+    ctx.fillRect(tx-11,-90,22,90);
+    for(let i=-10;i<10;i+=8){ ctx.fillRect(tx+i,-98,6,10); }
+    ctx.beginPath(); ctx.moveTo(tx-14,-90); ctx.lineTo(tx,-118); ctx.lineTo(tx+14,-90); ctx.closePath(); ctx.fill();
+  });
+  // a taller central keep tower with its own pointed roof
+  ctx.fillRect(-15,-108,30,40);
+  for(let i=-14;i<14;i+=10){ ctx.fillRect(i,-116,7,10); }
+  ctx.beginPath(); ctx.moveTo(-17,-108); ctx.lineTo(0,-140); ctx.lineTo(17,-108); ctx.closePath(); ctx.fill();
+  // arched gatehouse
+  ctx.fillStyle="rgba(0,0,0,0.45)";
+  ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(-10,-24); ctx.quadraticCurveTo(0,-34,10,-24); ctx.lineTo(10,0); ctx.closePath(); ctx.fill();
+  // a banner atop the keep, fluttering
+  ctx.strokeStyle=color; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,-140); ctx.lineTo(0,-152); ctx.stroke();
+  ctx.save(); ctx.translate(0,-152); ctx.rotate(-Math.PI/2);
+  drawPennant(ctx,0,0,11,color,t,7);
+  ctx.restore();
+  ctx.restore();
+}
+function drawWarFieldBg(ctx,w,h,t){
+  t = t||0;
+  const skyg=ctx.createLinearGradient(0,0,0,h*0.5);
+  skyg.addColorStop(0,"#7c7a70"); skyg.addColorStop(1,"#bcb4a2");
+  ctx.fillStyle=skyg; ctx.fillRect(0,0,w,h*0.5);
+  ctx.fillStyle="rgba(55,50,45,0.4)";
+  [[0.1,0.09,50],[0.32,0.05,70],[0.6,0.11,60],[0.86,0.07,55]].forEach(([cx,cy,r])=>{
+    ctx.beginPath(); ctx.arc(w*cx,h*cy,r,0,Math.PI*2); ctx.arc(w*cx+r*0.8,h*cy+6,r*0.7,0,Math.PI*2); ctx.fill();
+  });
+  // distant castle, watching over the field — proper towers and a keep, not a stack of rectangles
+  drawCastle(ctx, w*0.5, h*0.37, 0.65, "rgba(40,36,32,0.55)", t);
+  // rolling hills
+  ctx.fillStyle="#6a6a58"; ctx.beginPath(); ctx.ellipse(w*0.18,h*0.42,w*0.42,h*0.14,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#7a7a68"; ctx.beginPath(); ctx.ellipse(w*0.78,h*0.44,w*0.52,h*0.15,0,0,Math.PI*2); ctx.fill();
+  // trampled, muddy field
+  ctx.fillStyle="#5a5248"; ctx.fillRect(0,h*0.48,w,h*0.52);
+  ctx.strokeStyle="rgba(0,0,0,0.13)";
+  for(let y=h*0.5;y<h;y+=13){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  // two war camps facing off, with their standards raised
+  drawTent(ctx,w*0.08,h*0.34,"#3a3a3a",t);
+  drawTent(ctx,w*0.17,h*0.37,"#2a2a2a",t);
+  drawTent(ctx,w*0.92,h*0.32,"#2a3a6a",t);
+  drawTent(ctx,w*0.83,h*0.36,"#1c2a52",t);
+  // King John himself, at ease before his tent — seated, not standing over the battle like a
+  // giant. Kept to a small scale, well behind the mounted knights, so distance reads as distance.
+  {
+    const kx=w*0.865, seatY=h*0.315, kScale=0.5;
+    ctx.fillStyle="#241811";
+    ctx.fillRect(kx-9,seatY,18,4);
+    ctx.fillRect(kx-9,seatY-22,3,22); ctx.fillRect(kx+6,seatY-22,3,22);
+    ctx.fillRect(kx-9,seatY-22,18,3);
+    ctx.fillRect(kx-8,seatY+4,3,11); ctx.fillRect(kx+5,seatY+4,3,11);
+    drawFigure(ctx,{x:kx,y:seatY-4,scale:kScale,sex:"male",skin:"#e8c39a",outfit:"#5a1030",hair:"#9a3a1a",
+      noble:true,crown:true,beard:true,facing:-1});
+    drawGoblet(ctx, kx-10, seatY-2, 1);
+  }
+  [[0.04,"#7c1f2b"],[0.96,"#2a3a6a"]].forEach(([fx,c],i)=>{
+    ctx.strokeStyle="#2a1c10"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(w*fx,h*0.5); ctx.lineTo(w*fx,h*0.2); ctx.stroke();
+    drawPennant(ctx, w*fx, h*0.22, 22, c, t, i*3.1);
+  });
+  // shields and broken spears strewn across the field
+  [[0.3,0.62],[0.62,0.68],[0.46,0.6]].forEach(([fx,fy])=>{
+    ctx.save(); ctx.translate(w*fx,h*fy); ctx.rotate(0.5);
+    ctx.fillStyle="#4b5560"; ctx.beginPath(); ctx.ellipse(0,0,9,13,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#d9ad4d"; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.restore();
+  });
+  ctx.strokeStyle="#3a2818"; ctx.lineWidth=2;
+  [[0.38,0.58,20],[0.7,0.64,-25]].forEach(([fx,fy,ang])=>{
+    ctx.save(); ctx.translate(w*fx,h*fy); ctx.rotate(ang*Math.PI/180);
+    ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(14,0); ctx.stroke();
+    ctx.restore();
+  });
+  ctx.fillStyle="rgba(0,0,0,0.25)"; ctx.fillRect(0,h*0.75,w,h*0.25);
+}
+function drawCombatFrame(){
+  const canvas=getCanvas(); if(!canvas) return;
+  const ctx=canvas.getContext("2d"); const cs=combatState; const c=cs.cfg;
+  const w=800,h=450;
+  if(c.kind==="tournament") drawTourneyBg(ctx,w,h,performance.now()/1000);
+  else if(c.kind==="brigands") drawForestBg(ctx,w,h);
+  else drawWarFieldBg(ctx,w,h,performance.now()/1000);
+  if(c.background){
+    if(c.royal){
+      // cavalry clash in the open field between the two camps — clear of the tents on either side
+      for(let i=0;i<3;i++){
+        drawMountedKnight(ctx,{x:230+i*50,y:h*0.49,scale:0.6,skin:"#c98f5c",outfit:S.player.outfit,hair:"#2a1a10",
+          horseColor:["#6b4a30","#3a2c22","#8a7050"][i],weapon:"sword",facing:1});
+        drawMountedKnight(ctx,{x:470+i*50,y:h*0.49,scale:0.6,skin:"#8a6a4a",outfit:"#2a3a6a",hair:"#1a1208",
+          horseColor:["#4a4038","#6b4a30","#2a2018"][i],weapon:"lance",facing:-1});
+      }
+    } else {
+      for(let i=0;i<3;i++){
+        drawFigure(ctx,{x:100+i*40,y:h*0.32,scale:0.5,sex:"male",skin:"#c98f5c",outfit:S.player.outfit,hair:"#2a1a10",weapon:"sword",armored:true});
+        drawFigure(ctx,{x:w-100-i*40,y:h*0.30,scale:0.5,sex:"male",skin:"#8a6a4a",outfit:"#4a3a24",hair:"#1a1208",weapon:"club",beard:true});
+      }
+    }
+  }
+  // no one fights in their court finery — chainmail and a helm, banded in their own colours, replace it in battle
+  drawFigure(ctx,{x:w*0.28,y:h*0.68,scale:1.5,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true,armored:true,
+    weapon:cs.playerPose==="block"?"shield":c.weapon, pose:cs.playerPose, facing:1});
+  drawFigure(ctx,{x:w*0.72,y:h*0.68,scale:1.5,sex:"male",skin: c.royal? "#c98f5c":"#8a6a4a",outfit: c.royal?"#2a3a6a":(c.kind==="tournament"?"#5a5a5a":"#4a3a24"),
+    hair:"#1a1208", weapon:c.enemyWeapon, pose:cs.enemyPose, facing:-1, hit:cs.enemyPose==="stagger", beard:c.kind==="brigands", armored:c.kind!=="brigands"});
+  if(cs.phase==="windup"){
+    ctx.fillStyle="rgba(255,80,60,0.85)";
+    ctx.beginPath(); ctx.arc(w*0.72,h*0.42,10,0,Math.PI*2); ctx.fill();
+  }
+  if(cs.phase==="opening"){
+    ctx.fillStyle="rgba(90,220,120,0.85)";
+    ctx.beginPath(); ctx.arc(w*0.72,h*0.42,10,0,Math.PI*2); ctx.fill();
+  }
+}
+function endCombat(victory, fled){
+  const cs=combatState; cs.running=false;
+  if(combatKeyHandler){ document.removeEventListener("keydown", combatKeyHandler); combatKeyHandler=null; }
+  Audio1.setMode("ambient");
+  const killed = cs.cfg.background ? cs.bgKills : cs.enemiesDefeated;
+  if(fled){
+    toast("You Withdraw","You retreat from the field, weapon undrawn further.",3200);
+  } else if(victory){
+    cs.cfg.onWin(killed);
+  } else {
+    cs.cfg.onLose(killed);
+  }
+  save();
+  setTimeout(()=>{
+    if(S.gameEnded && S.warWon){ screenEnding(); }
+    else { screenKeep(); }
+  }, 350);
+}
+
+/* ============================= SEASON ADVANCE ============================= */
+function endSeason(msg){
+  save();
+  S.seasonsPlayed++;
+  // a fresh season, a fresh allowance of courtly attention
+  S.romanceCap=2; S.romanceUsed=0; S.romancePairsUsed=[];
+  // seasonal harvest/economy tick
+  const harvestGold = Math.round((S.productivity/100) * (20+S.serfs*0.6));
+  S.gold += harvestGold;
+  if(S.morale<25 || S.productivity<20){
+    const lost=randi(0,4);
+    S.serfs=Math.max(0,S.serfs-lost);
+  } else if(S.morale>65 && S.productivity>55){
+    S.serfs += randi(0,3);
+  }
+  // crop status now tracks how well the barony is actually run, not pure chance:
+  // well-treated, productive serfs tend the fields better; neglected ones let them go to seed.
+  const cropDrift = Math.round((S.productivity-50)/8) + Math.round((S.morale-50)/12) + randi(-3,3);
+  S.cropStatus = clamp(S.cropStatus + cropDrift, 5, 100);
+  S.seasonIndex++;
+  if(S.seasonIndex%4===0) S.year++;
+  // random event — but King John's ill will can only stay quiet so long: force a
+  // grievance at least every third season so the mounting-tyranny arc keeps pace.
+  S.seasonsSinceKingTrouble = (S.seasonsSinceKingTrouble||0)+1;
+  const kingEvents = RANDOM_EVENTS.filter(e=>e.kingTrouble);
+  let ev;
+  if(S.seasonsSinceKingTrouble>=3){
+    ev = choice(kingEvents);
+  } else {
+    const total = RANDOM_EVENTS.reduce((a,e)=>a+e.weight,0);
+    let r=rand(0,total); ev=RANDOM_EVENTS[RANDOM_EVENTS.length-1];
+    for(const e of RANDOM_EVENTS){ if(r<e.weight){ ev=e; break;} r-=e.weight; }
+  }
+  if(ev.kingTrouble) S.seasonsSinceKingTrouble=0;
+  ev.fx(S);
+  save();
+  updateSeasonLabel();
+  screenKeep(`${msg} The season turns to ${seasonName()}. The harvest brought ${harvestGold}g.`);
+  setTimeout(()=>{
+    modal(ev.name, `<p>${ev.text}</p>`, [{label:"Continue", cls:"gold"}]);
+  }, 200);
+}
+
+/* ============================= ENDING ============================= */
+function screenEnding(){
+  stopActiveAnim();
+  Audio1.setMode("victory"); Audio1.start();
+  stage.innerHTML = `<div class="viewport" style="aspect-ratio:16/8; margin-bottom:16px;"><canvas id="endCanvas" width="900" height="440"></canvas></div>
+  <div class="panel">
+    <h2 class="section" style="color:#7c1f2b;"><span class="drop">R</span>unnymede, June 1215</h2>
+    <p>The King's resistance is broken. On the meadow at Runnymede, beneath a sky heavy with the weight of history,
+    King John sets his seal to the Great Charter &mdash; <em>Magna Carta</em>. For the first time, a King of England
+    formally concedes that his power has limits: that free men cannot be imprisoned or dispossessed except by lawful
+    judgement, that the Church shall be free, that even the Crown is answerable to the law of the land.</p>
+    <p>The Charter that emerges from this rebellion will be revised and reissued for centuries, and its principles
+    &mdash; the rule of law, protection from arbitrary power, the seed of due process &mdash; will echo far beyond
+    thirteenth-century England, into constitutions and legal systems around the world.</p>
+    <h3 style="font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.06em; color:#7c1f2b;">Your Reign, in Sum</h3>
+    <div class="npc-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Seasons Ruled</div><div>${S.seasonsPlayed}</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Gold in Treasury</div><div>${fmt(S.gold)}g</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Knights Employed</div><div>${S.knights}</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Serfs</div><div>${fmt(S.serfs)}</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Combat Ability</div><div>${fmt(S.combat)}</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Baron Relations</div><div>${fmt(S.baronRelation)}%</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Married</div><div>${S.married? NOBLES.find(n=>n.id===S.spouseId).name : "No"}</div></div>
+      <div class="npc-card" style="cursor:default;"><div class="npc-name">Children</div><div>${S.children.length}</div></div>
+    </div>
+    <div class="btnrow" style="margin-top:14px;">
+      <button class="btn gold" id="btnNewReign">Begin a New Reign</button>
+    </div>
+  </div>`;
+  const ctx=$("#endCanvas").getContext("2d");
+  const w=900, h=440;
+  // sky, hazy toward the horizon
+  const skyG=ctx.createLinearGradient(0,0,0,150);
+  skyG.addColorStop(0,"#bcdcec"); skyG.addColorStop(1,"#dbe8c4");
+  ctx.fillStyle=skyG; ctx.fillRect(0,0,w,150);
+  // trees along the far bank, behind everything
+  for(let i=0;i<14;i++){
+    const tx=i*(w/13), ty=118+((i*37)%14);
+    const c = i%2===0 ? "#4a6a42" : "#3d5c38";
+    ctx.fillStyle=c;
+    ctx.beginPath(); ctx.arc(tx,ty,20+((i*17)%10),0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(tx+14,ty+6,14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#2a1c10"; ctx.fillRect(tx-2,ty+8,4,16);
+  }
+  // the river — a shining band of water between the trees and the meadow
+  const waterG=ctx.createLinearGradient(0,140,0,200);
+  waterG.addColorStop(0,"#8fbcd9"); waterG.addColorStop(1,"#4a7ab0");
+  ctx.fillStyle=waterG; ctx.fillRect(0,140,w,60);
+  ctx.fillStyle="rgba(255,255,255,0.55)";
+  for(let i=0;i<24;i++){
+    const sx=(i*61)%w, sy=148+((i*13)%44);
+    ctx.beginPath(); ctx.ellipse(sx,sy,10+((i*7)%8),1.6,0,0,Math.PI*2); ctx.fill();
+  }
+  // the water-meadow itself, where everyone stands
+  const grassG=ctx.createLinearGradient(0,196,0,h);
+  grassG.addColorStop(0,"#8fae5a"); grassG.addColorStop(1,"#5c7f3a");
+  ctx.fillStyle=grassG; ctx.fillRect(0,196,w,h-196);
+  ctx.strokeStyle="rgba(0,0,0,0.06)";
+  for(let i=0;i<40;i++){ const gx=(i*97)%w, gy=210+((i*53)%(h-220)); ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx-2,gy-7); ctx.stroke(); }
+
+  // the barons, come to witness, with the player leading them at the front of the assembly
+  for(let i=0;i<5;i++){
+    drawFigure(ctx,{x:200+i*58,y:330,scale:1.05,sex:i%2===0?"male":"female",skin:choice(["#e8c39a","#c98f5c"]),outfit:choice(["#7a3a2a","#3a5a8c","#5c3a8c","#3f4f37"]),hair:"#2a1a10",noble:true});
+  }
+  drawFigure(ctx,{x:495,y:330,scale:1.2,sex:S.player.sex,skin:S.player.skin,outfit:S.player.outfit,hair:S.player.hair,noble:true});
+
+  // King John, seated in his chair at his table, sealing the charter — cross about it to the last.
+  // Scaled close to the barons (a king, not a giant), so he reads as one more figure at Runnymede, not a monument.
+  const Kx=660, Ky=330, Kscale=1.18;
+  // the chair, drawn first so the King reads as sitting in it — a tall back peeking above his
+  // shoulders, with posts reaching all the way down to the meadow
+  ctx.fillStyle="#241811"; ctx.fillRect(Kx-33,302,8,112); ctx.fillRect(Kx+25,302,8,112);
+  const chairGrad=ctx.createLinearGradient(0,264,0,388);
+  chairGrad.addColorStop(0,"#3a2818"); chairGrad.addColorStop(1,"#241811");
+  ctx.fillStyle=chairGrad; ctx.fillRect(Kx-25,264,50,124);
+  ctx.strokeStyle="#1a120a"; ctx.lineWidth=2; ctx.strokeRect(Kx-25,264,50,124);
+  ctx.fillStyle="#3a2818"; ctx.beginPath(); ctx.arc(Kx-25,264,5,0,Math.PI*2); ctx.arc(Kx+25,264,5,0,Math.PI*2); ctx.fill();
+
+  drawFigure(ctx,{x:Kx,y:Ky,scale:Kscale,sex:"male",skin:"#e8c39a",outfit:"#5a1030",hair:"#9a3a1a",
+    noble:true,crown:true,beard:true,mood:"angry",pose:"block",facing:-1});
+
+  // the table: just a tabletop and slender open legs at the corners — a real writing table, not a
+  // solid box — so the King's own legs stay visible beneath it, seated at his chair.
+  const tableTop=Ky+22*Kscale, groundY=Ky+68*Kscale+8, tableLeft=Kx-62, tableRight=Kx+46;
+  ctx.fillStyle="rgba(0,0,0,0.22)"; ctx.beginPath(); ctx.ellipse((tableLeft+tableRight)/2,groundY+4,64,7,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#241811";
+  ctx.fillRect(tableLeft+5,tableTop+8,7,groundY-(tableTop+8));
+  ctx.fillRect(tableRight-12,tableTop+8,7,groundY-(tableTop+8));
+  // the tabletop surface itself, a slim plank crossing in front of his lap
+  ctx.fillStyle="#5a3f28"; ctx.fillRect(tableLeft-4,tableTop-7,tableRight-tableLeft+8,10);
+  ctx.strokeStyle="#241811"; ctx.lineWidth=1.5; ctx.strokeRect(tableLeft-4,tableTop-7,tableRight-tableLeft+8,10);
+  // the charter itself, laid open on the table, with the King's seal
+  ctx.save();
+  ctx.translate(tableLeft+18,tableTop-3); ctx.rotate(-0.08);
+  ctx.fillStyle="#eee2c0"; ctx.fillRect(-24,-14,48,20);
+  ctx.strokeStyle="#c9a227"; ctx.lineWidth=1; ctx.strokeRect(-24,-14,48,20);
+  ctx.strokeStyle="rgba(90,70,30,0.4)"; ctx.lineWidth=0.6;
+  for(let ln=-9;ln<10;ln+=4){ ctx.beginPath(); ctx.moveTo(-20,ln); ctx.lineTo(20,ln); ctx.stroke(); }
+  ctx.fillStyle="#a4303f"; ctx.beginPath(); ctx.arc(16,10,5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  // a quill, laid across the charter as if just set down
+  ctx.strokeStyle="#e8dcc0"; ctx.lineWidth=2; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(tableLeft+8,tableTop-10); ctx.lineTo(tableLeft+34,tableTop-18); ctx.stroke();
+  ctx.strokeStyle="#241a12"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(tableLeft+34,tableTop-18); ctx.lineTo(tableLeft+37,tableTop-19); ctx.stroke();
+
+  ctx.font="bold 22px Georgia"; ctx.fillStyle="#241a12"; ctx.textAlign="center";
+  ctx.fillText("Magna Carta, 1215", 450, 34);
+  clearSave();
+  $("#btnNewReign").onclick=()=>{ newGame(); screenCreation(); };
+}
+
+/* ============================= SOUND TOGGLE ============================= */
+$("#soundToggle").onclick=()=>{
+  const muted = !Audio1.isMuted();
+  Audio1.setMuted(muted);
+  $("#soundToggle").textContent = "♫ Music: "+(muted?"Off":"On");
+};
+
+/* ============================= INIT ============================= */
+newGame();
+screenTitle();
+
+})();
+</script>
+</body>
+</html>
